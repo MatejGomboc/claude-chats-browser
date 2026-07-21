@@ -56,8 +56,14 @@ exist yet. The plan below is agreed — follow it unless Matej says otherwise.
    Qt's `MarkdownText`; code blocks get a simple highlighter (KSyntaxHighlighting
    as an optional later upgrade).
 4. **Build**: CMake + Ninja, Qt 6.x (to be pinned at scaffold time).
+5. **Cross-platform**: Windows + Linux + macOS are all first-class targets.
+   Keep code and CMake portable — no platform-specific APIs without a
+   portable fallback, no hardcoded path separators, and assume
+   case-sensitive filesystems. Primary dev machine is Windows; CI should
+   eventually build all three.
 
 Feature order (by value):
+
 1. Conversation browser — sidebar, search-as-you-type (FTS5), date filters.
 2. Reader — markdown, collapsible thinking blocks, tool calls as expandable
    chips, inline attachments.
