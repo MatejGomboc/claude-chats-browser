@@ -58,16 +58,11 @@ works. The application itself is in design; this README describes the agreed pla
 
 ## Privacy
 
-This app processes your private conversations, so the rules are strict
-(see [SECURITY.md](SECURITY.md) § Privacy Model):
-
-- **Offline-first:** browsing, search, and reading never touch the network
-- **No telemetry:** nothing is collected, nothing is transmitted
-- **User-initiated network access only:** the optional backfill tool fetches your own
-  conversations from claude.ai with your own session cookie — entered interactively,
-  never written to disk
-- **Your data stays yours:** exports and the SQLite database live in the gitignored
-  `data/` directory and never leave your machine
+This app processes your private conversations. In one sentence: **nothing ever leaves
+your machine unless you explicitly ask it to.** The full privacy model — offline-first,
+no telemetry, user-initiated network access only, all data confined to the gitignored
+`data/` directory — is defined in [SECURITY.md](SECURITY.md) § Privacy Model, the
+canonical source.
 
 ---
 
@@ -121,15 +116,6 @@ is never stored.
 
 ---
 
-## Design Principles
-
-1. **Import once, browse forever** — no repeated parsing of giant JSON
-2. **Never destroy data** — imports merge by UUID; the copy with content always wins
-3. **Schema-tolerant** — the export format evolved over years; every field is optional, unknown block types are preserved raw
-4. **Offline-first** — the network is opt-in, per action, never ambient
-5. **Honest history** — gaps (deleted chats) are shown, not papered over
-6. **Don't over-engineer** — no abstractions until there's a concrete second use case
-
 ## Key Design Decisions
 
 | Decision | Choice | Rationale |
@@ -139,7 +125,9 @@ is never stored.
 | UI | Qt Quick (QML) | Fluid chat UI, cross-platform |
 | Data models | C++ `QAbstractListModel` | Logic in C++, QML stays declarative |
 | Markdown | Qt's native CommonMark support | No extra dependency |
-| Import strategy | Merge-by-UUID snapshots | Multiple exports form a union over time |
+| Import strategy | Merge-by-UUID snapshots | Multiple exports form a union over time; nothing is ever destroyed |
+| Schema handling | Tolerant parsing | The export format evolved over years — every field optional, unknown block types preserved raw |
+| Abstractions | None until a concrete second use case | Don't over-engineer |
 | Licence | GPL v3 | Consistent with my other projects |
 
 ## Documentation

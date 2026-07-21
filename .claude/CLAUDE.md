@@ -67,23 +67,13 @@ exist yet. The plan below is agreed — follow it unless Matej says otherwise.
    case-sensitive filesystems. Primary dev machine is Windows; CI should
    eventually build all three.
 
-Feature order (by value):
-
-1. Conversation browser — sidebar, search-as-you-type (FTS5), date filters.
-2. Reader — markdown, collapsible thinking blocks, tool calls as expandable
-   chips, inline attachments.
-3. Branch navigation for conversation trees.
-4. Artifact extraction/preview (replay artifact tool calls; export to disk).
-5. Stats dashboard — activity over time, tool/model usage.
+Feature order (by value): see `README.md` § Planned Features — the canonical
+list. Build them in that order.
 
 ## Tools
 
-`tools/backfill_conversations.py` — talks to the claude.ai backend API with
-the user's own `sessionKey` cookie. Requires `curl_cffi` (pip); plain urllib
-gets 403 from Cloudflare (TLS fingerprinting) — impersonating Chrome works.
-Subcommands: `list` (count content-less convs), `test` (auth check),
-`check` (endpoint sanity check against a known-good conversation),
-`fetch` (download, resumable, rate-limited), `merge` (write
-`conversations-merged.json` in export schema). Originally written to backfill
-tombstones — moot, since they 404 — but the same route works for fetching
-new conversations between exports.
+`tools/backfill_conversations.py`: usage and subcommands are documented in
+`README.md` § Tools (canonical). Context the README doesn't carry: it was
+originally written to backfill tombstones — moot, since they 404 (see
+§ Export format above) — and the `check` subcommand exists to distinguish
+"conversation deleted" from "endpoint wrong" when the API returns 404.

@@ -27,7 +27,8 @@ By participating, you are expected to uphold this code. Please see [CODE_OF_COND
 ## Privacy Considerations
 
 **This app processes private conversation data.** claude.ai exports contain personal chats, and the backfill tool
-handles live session cookies.
+handles live session cookies. The app's privacy guarantees are defined in `SECURITY.md` § Privacy Model (the
+canonical source); the rules below are how contributors uphold them.
 
 ### For All Contributors
 
@@ -116,11 +117,7 @@ When submitting:
 
 ### Prerequisites
 
-- C++20 compiler (MSVC 19.30+, GCC 12+, or Clang 15+)
-- CMake 3.24+
-- Ninja build system
-- Qt 6.x (Quick, Sql modules)
-- Python 3.10+ (for `tools/` scripts only)
+See `README.md` § Requirements — the canonical list of compilers, build tools, and Qt modules.
 
 ### Setup
 
@@ -141,16 +138,8 @@ Extract it into `data/` (gitignored).
 
 ### C++ / QML Style
 
-- Follow `.clang-format` formatting (run clang-format before committing)
-- Use C++20 features where appropriate
-- Allman braces for functions and namespaces, attached for classes/structs/enums
-- 4-space indentation, 170-column limit
-- See [STYLE.md](STYLE.md) for the full style guide, including QML and SQL conventions
-
-### Naming Conventions
-
-See [STYLE.md](STYLE.md) § Naming Conventions for the full table. Key rules:
-camelCase functions, PascalCase types, `m_` member prefix, SCREAMING_SNAKE_CASE constants.
+[STYLE.md](STYLE.md) is the canonical style guide — formatting, naming conventions, and
+language rules for C++, QML, SQL, Python, YAML, and Markdown. Run clang-format before committing.
 
 ### Documentation
 

@@ -27,12 +27,17 @@ Avoid duplicating information across files. Each piece of information should hav
 | Information | Canonical Source |
 |-------------|------------------|
 | Build commands | `README.md` § Building (once the scaffold lands) |
+| Toolchain prerequisites | `README.md` § Requirements |
+| Planned features (and build order) | `README.md` § Planned Features |
+| Backfill tool usage | `README.md` § Tools |
+| Coding standards & naming | `STYLE.md` (this file) |
 | Commit conventions | `CONTRIBUTING.md` § Commit Messages |
 | British spelling 🇬🇧 | `CONTRIBUTING.md` § British Spelling |
 | PR requirements | `CONTRIBUTING.md` § Pull Requests |
-| Privacy model & security policy | `SECURITY.md` |
+| Contributor privacy rules | `CONTRIBUTING.md` § Privacy Considerations |
+| Privacy model & security policy | `SECURITY.md` § Privacy Model |
 | Formatting rules | `.editorconfig`, `.clang-format` |
-| Export-format findings & project plan | `.claude/CLAUDE.md` |
+| Export-format findings & architecture plan | `.claude/CLAUDE.md` |
 
 **Guidelines:**
 
@@ -40,6 +45,11 @@ Avoid duplicating information across files. Each piece of information should hav
 - If information must appear in multiple places (e.g., PR template checklists), keep it minimal
 - When updating information, update the canonical source first
 - Cross-reference using `filename` § Section Name format
+
+**Deliberate exception:** the *"`data/` must never be committed"* rule is repeated in
+`.gitignore`, `.claude/CLAUDE.md`, `CONTRIBUTING.md`, and the PR template. This is
+intentional defence in depth for a safety-critical rule, not an SSOT violation — keep
+every copy.
 
 ---
 
