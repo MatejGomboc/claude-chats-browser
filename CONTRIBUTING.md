@@ -126,8 +126,7 @@ git clone https://github.com/MatejGomboc/claude-chats-browser.git
 cd claude-chats-browser
 ```
 
-Build presets will be defined when the application scaffold lands; from then on,
-`README.md` § Building is the canonical source for build commands.
+Then build as described in `README.md` § Building (the canonical source for build commands).
 
 To try the app you need a claude.ai data export (claude.ai → Settings → Privacy → Export data).
 Extract it into `data/` (gitignored).
@@ -136,10 +135,10 @@ Extract it into `data/` (gitignored).
 
 ## Coding Standards
 
-### C++ / QML Style
+### C++ Style
 
 [STYLE.md](STYLE.md) is the canonical style guide — formatting, naming conventions, and
-language rules for C++, QML, SQL, Python, YAML, and Markdown. Run clang-format before committing.
+language rules for C++, Qt Designer forms, SQL, Python, YAML, and Markdown. Run clang-format before committing.
 
 ### Documentation
 
@@ -227,7 +226,7 @@ chore: bump Qt to 6.8
 | `README.md` | User-facing overview and quick start |
 | `CONTRIBUTING.md` | This file — contributor guidelines |
 | `CODE_OF_CONDUCT.md` | Contributor Covenant code of conduct |
-| `STYLE.md` | Code style conventions (C++, QML, SQL, Python, YAML, Markdown) |
+| `STYLE.md` | Code style conventions (C++, Qt Designer forms, SQL, Python, YAML, Markdown) |
 | `SECURITY.md` | Privacy model, security policy, and vulnerability reporting |
 | `CHANGELOG.md` | User-facing change history (reserved until first stable release) |
 | `.claude/CLAUDE.md` | AI assistant context — export-format findings and project plan |

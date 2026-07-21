@@ -15,8 +15,7 @@ CMakeUserPresets.json
 __pycache__/
 *.pyc
 
-# IDEs
-.vscode/
+# IDEs (.vscode is committed — shared lint/format settings)
 .idea/
 .vs/
 

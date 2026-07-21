@@ -28,7 +28,7 @@ FTS5 full-text index, then gives you a native desktop UI over it:
 
 ```text
 ┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
-│  claude.ai       │      │  Importer        │      │  Qt Quick UI     │
+│  claude.ai       │      │  Importer        │      │  Qt Widgets UI   │
 │  export zip      │─────►│                  │─────►│                  │
 │                  │      │  SQLite + FTS5   │      │  browse, search, │
 │  (huge JSON)     │      │  (local file)    │      │  read, export    │
@@ -81,13 +81,29 @@ All three are first-class targets.
 - **C++20** compiler (MSVC 19.30+, GCC 12+, or Clang 15+)
 - **CMake** 3.24+
 - **Ninja** build system
-- **Qt 6.x** (Quick and Sql modules)
+- **Qt 6.5+** (Widgets and Sql modules)
 - **Python** 3.10+ (for `tools/` scripts only)
 
 ## Building
 
-Build presets will be defined when the application scaffold lands; this section will
-then become the canonical source for build commands.
+Set the `QTDIR` environment variable to your Qt kit directory
+(e.g. `C:\Qt\6.11.1\msvc2022_64` or `~/Qt/6.11.1/gcc_64`), then:
+
+```bash
+# Windows (from a VS developer prompt, or via VS Code CMake Tools)
+cmake --preset windows-msvc-debug
+cmake --build build/windows-msvc-debug
+
+# Linux
+cmake --preset linux-gcc-debug
+cmake --build build/linux-gcc-debug
+
+# macOS
+cmake --preset macos-clang-debug
+cmake --build build/macos-clang-debug
+```
+
+Each preset has a `-release` twin. `cmake --list-presets` shows what's available on your platform.
 
 ## Getting Your Export
 
@@ -122,9 +138,9 @@ is never stored.
 |----------|--------|-----------|
 | Storage | SQLite + FTS5 | Instant startup, real full-text search, single-file database |
 | SQLite driver | Qt's bundled QSQLITE | FTS5 compiled in, no extra dependency |
-| UI | Qt Quick (QML) | Fluid chat UI, cross-platform |
-| Data models | C++ `QAbstractListModel` | Logic in C++, QML stays declarative |
-| Markdown | Qt's native CommonMark support | No extra dependency |
+| UI | Qt Widgets | Native desktop feel, mature model/view classes, straightforward debugging |
+| Data models | C++ `QAbstractItemModel` subclasses | Logic in models, views stay passive |
+| Markdown | Qt's native CommonMark support (`QTextDocument`) | No extra dependency |
 | Import strategy | Merge-by-UUID snapshots | Multiple exports form a union over time; nothing is ever destroyed |
 | Schema handling | Tolerant parsing | The export format evolved over years — every field optional, unknown block types preserved raw |
 | Abstractions | None until a concrete second use case | Don't over-engineer |
@@ -135,7 +151,7 @@ is never stored.
 | Document | Purpose |
 |----------|---------|
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor guidelines |
-| [STYLE.md](STYLE.md) | Code style conventions (C++, QML, SQL, Python) |
+| [STYLE.md](STYLE.md) | Code style conventions (C++, SQL, Python) |
 | [SECURITY.md](SECURITY.md) | Privacy model, security policy, vulnerability reporting |
 | [CHANGELOG.md](CHANGELOG.md) | Change history (reserved until first stable release) |
 | [.claude/CLAUDE.md](.claude/CLAUDE.md) | Export-format findings and project plan |

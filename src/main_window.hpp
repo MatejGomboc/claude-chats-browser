@@ -12,19 +12,29 @@
     GNU General Public License for more details.
 */
 
-#include "main_window.hpp"
-#include <QApplication>
+#pragma once
 
-int main(int argc, char* argv[])
+#include <QMainWindow>
+#include <memory>
+
+QT_BEGIN_NAMESPACE
+namespace Ui
 {
-    QApplication application(argc, argv);
-    QApplication::setApplicationName("claude-chats-browser");
-    QApplication::setApplicationDisplayName("Claude Chats Browser");
-    QApplication::setApplicationVersion(APP_VERSION_STRING);
-    QApplication::setOrganizationName("MatejGomboc");
+    class MainWindow;
+}
+QT_END_NAMESPACE
 
-    ChatsBrowser::MainWindow main_window;
-    main_window.show();
+namespace ChatsBrowser
+{
+    //! Application main window: hosts the conversation browser and reader views.
+    class MainWindow : public QMainWindow {
+        Q_OBJECT
 
-    return QApplication::exec();
+    public:
+        explicit MainWindow(QWidget* parent = nullptr);
+        ~MainWindow() override;
+
+    private:
+        std::unique_ptr<Ui::MainWindow> m_ui; //!< Designer-generated form.
+    };
 }

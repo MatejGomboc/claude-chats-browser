@@ -13,18 +13,16 @@
 */
 
 #include "main_window.hpp"
-#include <QApplication>
+#include "ui_main_window.h"
 
-int main(int argc, char* argv[])
+namespace ChatsBrowser
 {
-    QApplication application(argc, argv);
-    QApplication::setApplicationName("claude-chats-browser");
-    QApplication::setApplicationDisplayName("Claude Chats Browser");
-    QApplication::setApplicationVersion(APP_VERSION_STRING);
-    QApplication::setOrganizationName("MatejGomboc");
+    MainWindow::MainWindow(QWidget* parent) :
+        QMainWindow(parent),
+        m_ui(std::make_unique<Ui::MainWindow>())
+    {
+        m_ui->setupUi(this);
+    }
 
-    ChatsBrowser::MainWindow main_window;
-    main_window.show();
-
-    return QApplication::exec();
+    MainWindow::~MainWindow() = default;
 }

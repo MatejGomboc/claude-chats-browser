@@ -57,8 +57,8 @@ every copy.
 
 ### Formatting
 
-Use `.clang-format` (LLVM-based; the file lands with the application scaffold). All code should be formatted before committing.
-Run `clang-format -i` on `.cpp` and `.hpp` files only — never on `.qml` files.
+Use `.clang-format` (LLVM-based). All code should be formatted before committing.
+Run `clang-format -i` on `.cpp` and `.hpp` files only — never on `.ui` files (Designer-generated XML).
 
 Key settings:
 
@@ -238,9 +238,9 @@ connect(&m_importer, SIGNAL(progressChanged(int)), this, SLOT(onImportProgress(i
 
 - Ownership: use Qt parent-child ownership for `QObject`s; `std::unique_ptr` for non-`QObject`
   heap objects. No raw `new` without a parent.
-- Expose data to QML via `QAbstractListModel` subclasses and `Q_PROPERTY` — do not push
-  business logic into QML.
-- `Q_PROPERTY` names are camelCase (Qt convention).
+- Expose data to views via `QAbstractItemModel` subclasses — logic lives in models,
+  views and widgets stay passive.
+- Long-running work (JSON parsing, database queries) never blocks the UI thread.
 
 ### Doxygen Comments
 
@@ -284,22 +284,13 @@ Licence headers use plain `/* */` (not doxygen) with the full GPL v3 notice:
 
 ---
 
-## QML
+## Qt Designer Forms (`.ui`)
 
-Follow the C++ conventions where applicable.
-
-| Item | Convention | Example |
-|------|------------|---------|
-| Component files | PascalCase | `ConversationList.qml`, `MessageBubble.qml` |
-| `id` values | lowerCamelCase | `conversationSidebar` |
-| Properties / functions | lowerCamelCase | `property bool showThinking` |
-| Indent | 4 spaces | |
-| Column limit | 170 | |
-
-- Prefer declarative bindings over imperative JavaScript
-- Keep JavaScript logic minimal — push logic into C++ models and expose it via properties
-- One component per file; small reusable components over deep nesting
-- Licence header: same GPL v3 notice as C++, in a `/* */` block
+- Edit `.ui` files through Qt Designer (or Qt Creator's Design mode) — do not hand-edit the XML
+  beyond trivial fixes, and never run formatters on them
+- `objectName` values are lowerCamelCase (`conversationSidebar`, `menuBar`)
+- Keep forms structural: layouts, widgets, actions. All behaviour is wired in C++
+- One form per top-level window/dialog class
 
 ---
 
@@ -477,10 +468,19 @@ Warnings are errors on all compilers — zero-warning policy:
 - **MSVC:** `/W4 /WX`
 - **GCC/Clang:** `-Wall -Wextra -Wpedantic -Werror`
 
-### Static Analysis and Sanitisers
+### Static Analysis (Clang-Tidy)
 
-Planned for the scaffold: `.clang-tidy` configuration and CMake sanitiser presets
-(AddressSanitizer/UndefinedBehaviorSanitizer on Linux). This section will be expanded when they land.
+Configuration in `.clang-tidy`. Runs via `clangd` in VS Code. Bugprone, analyser, and
+concurrency checks are promoted to errors. To suppress a specific check on a line:
+
+```cpp
+int x = legacy_function(); // NOLINT(bugprone-unused-return-value)
+```
+
+### Sanitisers
+
+Planned: CMake sanitiser presets (AddressSanitizer/UndefinedBehaviorSanitizer on Linux).
+This section will be expanded when they land.
 
 ---
 

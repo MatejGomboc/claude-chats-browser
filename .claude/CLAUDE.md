@@ -4,8 +4,9 @@ Qt 6 / C++ desktop app for browsing, searching and reading claude.ai
 data-export dumps offline. The raw export is a single huge JSON file that is
 unusable for humans; this app turns it into a fast, pleasant chat browser.
 
-**Status: pre-scaffold.** Data layer is fully analyzed; app code does not
-exist yet. The plan below is agreed — follow it unless Matej says otherwise.
+**Status: scaffold stage.** A minimal Qt Widgets app builds (main window only);
+no features yet. The plan below is agreed — follow it unless Matej says
+otherwise. Obey `STYLE.md` in all code.
 
 ## Off limits
 
@@ -56,11 +57,13 @@ exist yet. The plan below is agreed — follow it unless Matej says otherwise.
 2. **Merge-by-UUID incremental imports**: every export (and any API fetch) is
    a snapshot; importing several merges by conversation UUID, preferring the
    copy that has content. No import is ever destructive.
-3. **UI**: Qt Quick (QML) frontend, C++ backend exposing `QAbstractListModel`s
-   (conversation list, message list) over the SQLite store. Markdown via
-   Qt's `MarkdownText`; code blocks get a simple highlighter (KSyntaxHighlighting
-   as an optional later upgrade).
-4. **Build**: CMake + Ninja, Qt 6.x (to be pinned at scaffold time).
+3. **UI**: Qt Widgets (decided 2026-07-21, supersedes the earlier QML idea) —
+   `QMainWindow` shell with Designer `.ui` forms, `QAbstractItemModel`
+   subclasses over the SQLite store feeding passive views. Markdown via
+   `QTextDocument::setMarkdown`; code blocks get a simple highlighter
+   (KSyntaxHighlighting as an optional later upgrade).
+4. **Build**: CMake + Ninja + presets (`CMakePresets.json`), Qt 6.5+
+   (dev machine: 6.11.1 msvc2022_64; set `QTDIR` to the kit directory).
 5. **Cross-platform**: Windows + Linux + macOS are all first-class targets.
    Keep code and CMake portable — no platform-specific APIs without a
    portable fallback, no hardcoded path separators, and assume
