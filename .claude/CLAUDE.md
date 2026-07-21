@@ -7,6 +7,11 @@ unusable for humans; this app turns it into a fast, pleasant chat browser.
 **Status: pre-scaffold.** Data layer is fully analyzed; app code does not
 exist yet. The plan below is agreed — follow it unless Matej says otherwise.
 
+## Off limits
+
+- **`CODE_OF_CONDUCT.md`** — do not modify (adopted verbatim, Contributor Covenant 3.0).
+- **`LICENCE`** — do not modify (legal document).
+
 ## Hard rules
 
 - `data/` must NEVER be committed. It contains private conversations and this
