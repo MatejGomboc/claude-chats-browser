@@ -1,0 +1,25 @@
+# Private chat data — never commit: the claude.ai export contains
+# personal conversations and this repo is public
+data/
+
+# Build output
+build/
+build-*/
+out/
+
+# Qt Creator / CMake user files
+CMakeLists.txt.user
+CMakeUserPresets.json
+
+# Python
+__pycache__/
+*.pyc
+
+# IDEs
+.vscode/
+.idea/
+.vs/
+
+# OS noise
+Thumbs.db
+Desktop.ini
