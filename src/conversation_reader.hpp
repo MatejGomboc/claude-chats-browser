@@ -43,7 +43,13 @@ namespace ChatsBrowser
         //! Clears the view back to its placeholder prompt.
         void clearConversation();
 
+    protected:
+        void resizeEvent(QResizeEvent* event) override;
+
     private:
+        //! Forces the scrolled content tall enough for word-wrapped messages at the current width.
+        void updateContentHeight();
+
         //! Removes all message widgets, leaving the trailing stretch in place.
         void clearMessages();
 
