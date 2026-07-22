@@ -14,6 +14,8 @@ qt_add_executable(claude-chats-browser
     WIN32 MACOSX_BUNDLE
     src/conversation_list_model.cpp
     src/conversation_list_model.hpp
+    src/conversation_reader.cpp
+    src/conversation_reader.hpp
     src/database.cpp
     src/database.hpp
     src/import_worker.cpp

@@ -15,17 +15,19 @@
 #include "main_window.hpp"
 #include "ui_main_window.h"
 #include "conversation_list_model.hpp"
+#include "conversation_reader.hpp"
 #include "database.hpp"
 #include "import_worker.hpp"
 #include <QAction>
 #include <QFileDialog>
+#include <QItemSelectionModel>
 #include <QKeySequence>
-#include <QLabel>
 #include <QLineEdit>
 #include <QListView>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QModelIndex>
 #include <QSplitter>
 #include <QSqlDatabase>
 #include <QStatusBar>
@@ -84,13 +86,11 @@ namespace ChatsBrowser
         sidebar_layout->addWidget(m_search_edit);
         sidebar_layout->addWidget(m_conversation_view);
 
-        QLabel* reader_placeholder = new QLabel("Select a conversation", m_ui->centralWidget);
-        reader_placeholder->setAlignment(Qt::AlignCenter);
-        reader_placeholder->setEnabled(false);
+        m_reader = new ConversationReader(m_ui->centralWidget);
 
         QSplitter* splitter = new QSplitter(Qt::Horizontal, m_ui->centralWidget);
         splitter->addWidget(sidebar);
-        splitter->addWidget(reader_placeholder);
+        splitter->addWidget(m_reader);
         splitter->setStretchFactor(0, 0);
         splitter->setStretchFactor(1, 1);
         splitter->setSizes({360, 920});
@@ -106,6 +106,8 @@ namespace ChatsBrowser
         connect(m_search_timer, &QTimer::timeout, this, [this]() {
             m_conversation_model->setSearchFilter(m_search_edit->text());
         });
+
+        connect(m_conversation_view->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::onConversationSelected);
     }
 
     void MainWindow::setupMenus()
@@ -168,5 +170,18 @@ namespace ChatsBrowser
         m_import_action->setEnabled(true);
         statusBar()->clearMessage();
         QMessageBox::warning(this, "Import failed", error_message);
+    }
+
+    void MainWindow::onConversationSelected(const QModelIndex& current, const QModelIndex& previous)
+    {
+        Q_UNUSED(previous);
+
+        if (!current.isValid()) {
+            m_reader->clearConversation();
+            return;
+        }
+
+        QString conversation_uuid = current.data(ConversationListModel::UuidRole).toString();
+        m_reader->showConversation(conversation_uuid);
     }
 }

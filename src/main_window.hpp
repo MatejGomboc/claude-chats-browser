@@ -26,12 +26,14 @@ namespace Ui
 class QAction;
 class QLineEdit;
 class QListView;
+class QModelIndex;
 class QTimer;
 QT_END_NAMESPACE
 
 namespace ChatsBrowser
 {
     class ConversationListModel;
+    class ConversationReader;
 
     //! Application main window: hosts the conversation browser and reader views.
     class MainWindow : public QMainWindow {
@@ -50,6 +52,7 @@ namespace ChatsBrowser
         void onImportProgress(int done_conversations, int total_conversations);
         void onImportFinished(int imported_conversations, int skipped_conversations, int imported_messages);
         void onImportFailed(const QString& error_message);
+        void onConversationSelected(const QModelIndex& current, const QModelIndex& previous);
 
     private:
         void setupUi();
@@ -58,6 +61,7 @@ namespace ChatsBrowser
 
         std::unique_ptr<Ui::MainWindow> m_ui; //!< Designer-generated form.
         ConversationListModel* m_conversation_model{nullptr}; //!< Sidebar model (owned by this window).
+        ConversationReader* m_reader{nullptr}; //!< Right-pane reader for the selected conversation.
         QLineEdit* m_search_edit{nullptr}; //!< Search-as-you-type box above the conversation list.
         QListView* m_conversation_view{nullptr}; //!< Sidebar conversation list.
         QTimer* m_search_timer{nullptr}; //!< Debounce timer for the search box.
