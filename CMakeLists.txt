@@ -6,12 +6,18 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Sql)
 
 qt_standard_project_setup()
 
 qt_add_executable(claude-chats-browser
     WIN32 MACOSX_BUNDLE
+    src/conversation_list_model.cpp
+    src/conversation_list_model.hpp
+    src/database.cpp
+    src/database.hpp
+    src/import_worker.cpp
+    src/import_worker.hpp
     src/main.cpp
     src/main_window.cpp
     src/main_window.hpp
@@ -38,6 +44,7 @@ target_link_libraries(claude-chats-browser
     PRIVATE
         Qt6::Core
         Qt6::Widgets
+        Qt6::Sql
 )
 
 install(TARGETS claude-chats-browser
