@@ -64,7 +64,10 @@ def conversation_output_path(out_dir, uuid):
     """Absolute path to <out_dir>/<uuid>.json, verified to stay within out_dir."""
     require_uuid(uuid, "conversation uuid")
     base = os.path.realpath(out_dir)
-    path = os.path.realpath(os.path.join(base, uuid + ".json"))
+    # os.path.basename strips any directory components (belt-and-braces on top of the
+    # UUID check), so the file can only ever be created directly inside out_dir.
+    filename = os.path.basename(uuid + ".json")
+    path = os.path.realpath(os.path.join(base, filename))
     if os.path.commonpath((base, path)) != base:
         raise ValueError(f"refusing path outside {base!r}: {uuid!r}")
     return path
