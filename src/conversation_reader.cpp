@@ -88,30 +88,67 @@ namespace ChatsBrowser
             return;
         }
 
-        QSqlDatabase database = QSqlDatabase::database("main");
-        QSqlQuery query(database);
-        query.prepare("SELECT raw_json FROM messages WHERE conversation_uuid = ? ORDER BY created_at, rowid");
-        query.addBindValue(conversation_uuid);
-        if (!query.exec()) {
-            qWarning() << "Message query failed:" << query.lastError().text();
+        buildTree(conversation_uuid);
+        if (m_messages.isEmpty()) {
             showPlaceholder("Could not load this conversation.");
             return;
         }
 
+        renderPath(true);
+    }
+
+    void ConversationReader::buildTree(const QString& conversation_uuid)
+    {
+        m_messages.clear();
+        m_tree.clear();
+
+        QSqlQuery query(QSqlDatabase::database("main"));
+        query.prepare("SELECT uuid, parent_uuid, raw_json FROM messages WHERE conversation_uuid = ? ORDER BY created_at, rowid");
+        query.addBindValue(conversation_uuid);
+        if (!query.exec()) {
+            qWarning() << "Message query failed:" << query.lastError().text();
+            return;
+        }
+
+        QList<QPair<QString, QString>> ordered;
+        while (query.next()) {
+            QString uuid = query.value(0).toString();
+            QJsonDocument document = QJsonDocument::fromJson(query.value(2).toString().toUtf8());
+            if (uuid.isEmpty() || (!document.isObject())) {
+                continue;
+            }
+            ordered.append({uuid, query.value(1).toString()});
+            m_messages.insert(uuid, document.object());
+        }
+
+        m_tree.build(ordered);
+    }
+
+    void ConversationReader::renderPath(bool reset_scroll)
+    {
         clearMessages();
 
         int insert_position = 0;
         bool any_content = false;
-        while (query.next()) {
-            QJsonDocument document = QJsonDocument::fromJson(query.value(0).toString().toUtf8());
-            if (!document.isObject()) {
+        const QList<PathNode> path = m_tree.currentPath();
+        for (const PathNode& node : path) {
+            MessageWidget* widget = new MessageWidget(m_messages.value(node.uuid), node.branch_index, node.branch_count, m_container);
+            if (!widget->hasRenderedContent()) {
+                widget->deleteLater();
                 continue;
             }
 
-            MessageWidget* message_widget = new MessageWidget(document.object(), m_container);
-            if (!message_widget->hasRenderedContent()) {
-                message_widget->deleteLater();
-                continue;
+            if (node.branch_count > 1) {
+                const QString fork_key = node.fork_key;
+                const int branch_index = node.branch_index;
+                connect(widget, &MessageWidget::branchPrevRequested, this, [this, fork_key, branch_index]() {
+                    m_tree.selectBranch(fork_key, branch_index - 1);
+                    renderPath(false);
+                });
+                connect(widget, &MessageWidget::branchNextRequested, this, [this, fork_key, branch_index]() {
+                    m_tree.selectBranch(fork_key, branch_index + 1);
+                    renderPath(false);
+                });
             }
 
             if (any_content) {
@@ -122,7 +159,7 @@ namespace ChatsBrowser
                 insert_position++;
             }
 
-            m_layout->insertWidget(insert_position, message_widget);
+            m_layout->insertWidget(insert_position, widget);
             insert_position++;
             any_content = true;
         }
@@ -133,7 +170,9 @@ namespace ChatsBrowser
         }
 
         updateContentHeight();
-        verticalScrollBar()->setValue(0);
+        if (reset_scroll) {
+            verticalScrollBar()->setValue(0);
+        }
     }
 
     void ConversationReader::clearConversation()

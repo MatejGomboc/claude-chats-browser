@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Sql Svg)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Sql Svg Test)
 
 qt_standard_project_setup()
 
@@ -18,6 +18,8 @@ qt_add_executable(claude-chats-browser
     src/conversation_list_model.hpp
     src/conversation_reader.cpp
     src/conversation_reader.hpp
+    src/conversation_tree.cpp
+    src/conversation_tree.hpp
     src/database.cpp
     src/database.hpp
     src/icon_util.cpp
@@ -77,3 +79,33 @@ qt_generate_deploy_app_script(
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_script})
+
+# Tests
+enable_testing()
+
+qt_add_executable(tst_conversation_tree
+    tests/tst_conversation_tree.cpp
+    src/conversation_tree.cpp
+    src/conversation_tree.hpp
+)
+
+target_include_directories(tst_conversation_tree PRIVATE src)
+
+if(MSVC)
+    target_compile_options(tst_conversation_tree PRIVATE /W4 /WX)
+else()
+    target_compile_options(tst_conversation_tree PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
+
+target_link_libraries(tst_conversation_tree
+    PRIVATE
+        Qt6::Core
+        Qt6::Test
+)
+
+add_test(NAME conversation_tree COMMAND tst_conversation_tree)
+
+# So ctest can find the Qt runtime DLLs (Windows has no rpath) without the caller
+# having to put Qt's bin directory on PATH first.
+set_tests_properties(conversation_tree PROPERTIES
+    ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")

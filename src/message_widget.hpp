@@ -34,13 +34,25 @@ namespace ChatsBrowser
         Q_OBJECT
 
     public:
-        //! \param message The message object as stored in the export (its raw JSON).
-        explicit MessageWidget(const QJsonObject& message, QWidget* parent = nullptr);
+        /*!
+            \param message The message object as stored in the export (its raw JSON).
+            \param branch_index Zero-based position of this message among its siblings.
+            \param branch_count Number of sibling branches at this point (1 = no fork).
+        */
+        explicit MessageWidget(const QJsonObject& message, int branch_index = 0, int branch_count = 1, QWidget* parent = nullptr);
 
         //! True if the message produced any visible content (text, thinking, or a tool block).
         [[nodiscard]] bool hasRenderedContent() const;
 
+    signals:
+        //! Emitted when the user asks for the previous sibling branch at this fork.
+        void branchPrevRequested();
+
+        //! Emitted when the user asks for the next sibling branch at this fork.
+        void branchNextRequested();
+
     private:
+        void addHeader(QVBoxLayout* layout, const QString& sender, int branch_index, int branch_count);
         void addMarkdownLabel(QVBoxLayout* layout, const QString& markdown, const char* object_name);
         void addCollapsible(QVBoxLayout* layout, const QString& title, const QString& body, bool monospace);
 
