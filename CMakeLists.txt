@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Sql)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Sql Svg)
 
 qt_standard_project_setup()
 
@@ -20,6 +20,8 @@ qt_add_executable(claude-chats-browser
     src/conversation_reader.hpp
     src/database.cpp
     src/database.hpp
+    src/icon_util.cpp
+    src/icon_util.hpp
     src/import_worker.cpp
     src/import_worker.hpp
     src/main.cpp
@@ -30,10 +32,13 @@ qt_add_executable(claude-chats-browser
     src/message_widget.hpp
 )
 
-qt_add_resources(claude-chats-browser "theme"
+qt_add_resources(claude-chats-browser "assets"
     PREFIX "/"
     BASE "resources"
-    FILES resources/theme.qss
+    FILES
+        resources/theme.qss
+        resources/icons/chat.svg
+        resources/icons/close.svg
 )
 
 target_compile_definitions(claude-chats-browser
@@ -57,6 +62,7 @@ target_link_libraries(claude-chats-browser
         Qt6::Core
         Qt6::Widgets
         Qt6::Sql
+        Qt6::Svg
 )
 
 install(TARGETS claude-chats-browser

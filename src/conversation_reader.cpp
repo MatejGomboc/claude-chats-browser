@@ -18,6 +18,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QLayout>
+#include <QResizeEvent>
 #include <QScrollBar>
 #include <QSqlDatabase>
 #include <QSqlError>
@@ -32,6 +34,7 @@ namespace ChatsBrowser
         QScrollArea(parent)
     {
         setWidgetResizable(true);
+        setFrameShape(QFrame::NoFrame);
 
         m_container = new QWidget(this);
         m_container->setObjectName("readerContainer");
@@ -129,6 +132,7 @@ namespace ChatsBrowser
             return;
         }
 
+        updateContentHeight();
         verticalScrollBar()->setValue(0);
     }
 
@@ -136,5 +140,23 @@ namespace ChatsBrowser
     {
         m_conversation_uuid.clear();
         showPlaceholder("Select a conversation to read it here.");
+    }
+
+    void ConversationReader::resizeEvent(QResizeEvent* event)
+    {
+        QScrollArea::resizeEvent(event);
+        updateContentHeight();
+    }
+
+    void ConversationReader::updateContentHeight()
+    {
+        // widgetResizable sizes the content to its unconstrained sizeHint, which is too short
+        // for word-wrapped messages. Pin a minimum height computed at the real (viewport)
+        // width so heightForWidth is honoured and messages never overlap.
+        QLayout* content_layout = m_container->layout();
+        if ((content_layout == nullptr) || (!content_layout->hasHeightForWidth())) {
+            return;
+        }
+        m_container->setMinimumHeight(content_layout->heightForWidth(viewport()->width()));
     }
 }

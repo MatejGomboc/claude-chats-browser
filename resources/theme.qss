@@ -1,47 +1,125 @@
 /*
-    VS Code Dark+ inspired theme for claude-chats-browser.
+    VS Code Dark+ theme for claude-chats-browser.
 
-    Palette (from VS Code's Dark+ default):
-      editor background   #1E1E1E
-      panel background    #252526
-      widget background   #333333
-      border              #3C3C3C
-      foreground          #D4D4D4
-      muted foreground    #858585
-      selection           #264F78
-      hover               #2A2D2E
-      keyword blue        #569CD6   (You / human)
-      type teal           #4EC9B0   (Claude / assistant)
-      comment green       #6A9955   (thinking)
-      function yellow     #DCDCAA   (tool call)
-      string orange       #CE9178   (tool result / code)
-      link blue           #3794FF
+    Palette (VS Code Dark+ defaults):
+      editor background        #1E1E1E
+      side bar background      #252526
+      activity bar background  #333333
+      tab inactive background  #2D2D2D
+      widget/input background  #3C3C3C
+      border                   #2D2D2D / #3C3C3C
+      foreground               #CCCCCC
+      muted foreground         #858585 / #969696
+      section header           #BBBBBB
+      active selection         #094771
+      inactive selection       #37373D
+      hover                    #2A2D2E
+      accent blue              #007ACC
+      status bar blue          #007ACC
+      keyword blue             #569CD6   (You / human)
+      type teal                #4EC9B0   (Claude / assistant)
+      comment green            #6A9955   (thinking)
+      function yellow          #DCDCAA   (tool call)
+      string orange            #CE9178   (tool result / code)
 */
 
 QWidget {
     background-color: #1E1E1E;
-    color: #D4D4D4;
-    font-size: 10pt;
+    color: #CCCCCC;
+    font-family: "Segoe UI", "Ubuntu", "Helvetica Neue", sans-serif;
+    font-size: 9pt;
 }
 
-QMainWindow, QMenuBar, QStatusBar {
-    background-color: #252526;
+/* No sunken frames around scroll areas, lists, or the reader. */
+QAbstractScrollArea, QScrollArea {
+    border: none;
 }
 
-QMenuBar::item:selected, QMenu::item:selected {
-    background-color: #094771;
+QMainWindow, QMenuBar {
+    background-color: #3C3C3C;
+}
+
+/* Menu bar */
+
+QMenuBar {
+    padding: 2px 4px;
+}
+
+QMenuBar::item {
+    background: transparent;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+QMenuBar::item:selected {
+    background-color: #505050;
 }
 
 QMenu {
     background-color: #252526;
-    border: 1px solid #3C3C3C;
+    border: 1px solid #454545;
+    padding: 4px;
+}
+
+QMenu::item {
+    padding: 4px 28px 4px 24px;
+    border-radius: 4px;
+}
+
+QMenu::item:selected {
+    background-color: #094771;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #454545;
+    margin: 4px 8px;
+}
+
+/* Activity bar (far-left vertical icon strip) */
+
+#activityBar {
+    background-color: #333333;
+    border: none;
+}
+
+#activityBar QToolButton {
+    background: transparent;
+    border: none;
+    border-left: 2px solid transparent;
+    padding: 10px 0;
+}
+
+#activityBar QToolButton:hover {
+    border-left: 2px solid transparent;
+}
+
+#activityBar QToolButton:checked {
+    border-left: 2px solid #FFFFFF;
+}
+
+/* Side bar */
+
+#sideBar {
+    background-color: #252526;
+    border: none;
+}
+
+#sideBarHeader {
+    color: #BBBBBB;
+    font-size: 8pt;
+    font-weight: bold;
+    padding: 8px 10px 4px 14px;
+    letter-spacing: 1px;
 }
 
 QLineEdit {
     background-color: #3C3C3C;
+    color: #CCCCCC;
     border: 1px solid #3C3C3C;
-    border-radius: 4px;
+    border-radius: 2px;
     padding: 4px 6px;
+    margin: 0 8px 6px 8px;
     selection-background-color: #264F78;
 }
 
@@ -53,10 +131,12 @@ QListView {
     background-color: #252526;
     border: none;
     outline: none;
+    padding: 2px 0;
 }
 
 QListView::item {
-    padding: 5px 8px;
+    padding: 4px 8px;
+    border: none;
 }
 
 QListView::item:hover {
@@ -68,33 +148,59 @@ QListView::item:selected {
     color: #FFFFFF;
 }
 
-QSplitter::handle {
-    background-color: #3C3C3C;
+QListView::item:selected:!active {
+    background-color: #37373D;
+    color: #CCCCCC;
 }
 
-QScrollBar:vertical {
+/* Editor group: tabs + breadcrumb + reader */
+
+#editorArea {
     background-color: #1E1E1E;
-    width: 14px;
-    margin: 0;
+    border: none;
 }
 
-QScrollBar::handle:vertical {
-    background-color: #424242;
-    min-height: 24px;
+QTabBar {
+    background-color: #252526;
+    border: none;
+}
+
+QTabBar::tab {
+    background-color: #2D2D2D;
+    color: #969696;
+    padding: 6px 10px;
+    border: none;
+    border-right: 1px solid #252526;
+    border-top: 1px solid transparent;
+    max-width: 220px;
+}
+
+QTabBar::tab:selected {
+    background-color: #1E1E1E;
+    color: #FFFFFF;
+    border-top: 1px solid #007ACC;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #333333;
+}
+
+QTabBar::close-button {
+    image: url(:/icons/close.svg);
+    subcontrol-position: right;
+}
+
+QTabBar::close-button:hover {
+    background-color: #505050;
     border-radius: 3px;
 }
 
-QScrollBar::handle:vertical:hover {
-    background-color: #4F4F4F;
-}
-
-QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-    height: 0;
-}
-
-QToolButton {
-    color: #D4D4D4;
-    padding: 2px;
+#breadcrumb {
+    background-color: #1E1E1E;
+    color: #A9A9A9;
+    padding: 3px 12px;
+    border-bottom: 1px solid #252526;
+    font-size: 8pt;
 }
 
 /* Reader */
@@ -110,12 +216,12 @@ QToolButton {
 }
 
 #senderHuman {
-    color: #569CD6;
+    color: #DCDCAA;
     font-weight: bold;
 }
 
 #senderAssistant {
-    color: #4EC9B0;
+    color: #CE9178;
     font-weight: bold;
 }
 
@@ -124,7 +230,7 @@ QToolButton {
 }
 
 #messageDivider {
-    color: #3C3C3C;
+    color: #2D2D2D;
     max-height: 1px;
 }
 
@@ -141,4 +247,88 @@ QToolButton {
     border-left: 2px solid #DCDCAA;
     padding: 6px 10px;
     font-family: "Cascadia Code", "Consolas", monospace;
+}
+
+QToolButton {
+    color: #CCCCCC;
+    background: transparent;
+    border: none;
+    padding: 2px;
+}
+
+/* Splitter */
+
+QSplitter::handle {
+    background-color: #2D2D2D;
+}
+
+/* Status bar (orange accent) */
+
+QStatusBar {
+    background-color: #CE7B3C;
+    color: #FFFFFF;
+}
+
+QStatusBar::item {
+    border: none;
+}
+
+QStatusBar QLabel {
+    background: transparent;
+    color: #FFFFFF;
+    padding: 0 6px;
+    font-size: 8pt;
+}
+
+/* Overlay scrollbars: translucent, revealed on hover */
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 14px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: transparent;
+    min-height: 30px;
+    border-radius: 3px;
+    margin: 2px;
+}
+
+QScrollBar:vertical:hover::handle:vertical {
+    background: rgba(121, 121, 121, 0.7);
+}
+
+QScrollBar::handle:vertical:hover {
+    background: rgba(160, 160, 160, 0.9);
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 14px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background: transparent;
+    min-width: 30px;
+    border-radius: 3px;
+    margin: 2px;
+}
+
+QScrollBar:horizontal:hover::handle:horizontal {
+    background: rgba(121, 121, 121, 0.7);
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: rgba(160, 160, 160, 0.9);
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    width: 0;
+    height: 0;
+}
+
+QScrollBar::add-page, QScrollBar::sub-page {
+    background: transparent;
 }

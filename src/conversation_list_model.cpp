@@ -13,8 +13,10 @@
 */
 
 #include "conversation_list_model.hpp"
+#include "icon_util.hpp"
 #include <QBrush>
 #include <QColor>
+#include <QIcon>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -116,9 +118,15 @@ namespace ChatsBrowser
                 return row.name;
             }
             return row.has_content ? QString("(untitled)") : QString("(deleted conversation)");
+        case Qt::DecorationRole: {
+            // Cached once: a chat glyph in the default file-icon grey, dimmer for tombstones.
+            static const QIcon content_icon = IconUtil::tinted(":/icons/chat.svg", QColor("#C5C5C5"));
+            static const QIcon tombstone_icon = IconUtil::tinted(":/icons/chat.svg", QColor("#6A6A6A"));
+            return row.has_content ? content_icon : tombstone_icon;
+        }
         case Qt::ForegroundRole:
             if (!row.has_content) {
-                return QBrush(QColor(128, 128, 128));
+                return QBrush(QColor(0x85, 0x85, 0x85));
             }
             return QVariant();
         case Qt::ToolTipRole:
