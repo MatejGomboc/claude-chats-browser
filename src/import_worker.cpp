@@ -40,19 +40,20 @@ namespace ChatsBrowser
 
     QString ImportWorker::flattenMessageText(const QJsonObject& message)
     {
-        QStringList parts;
-
-        QString top_level_text = message.value("text").toString();
-        if (!top_level_text.isEmpty()) {
-            parts.append(top_level_text);
+        // Index the visible text only. Content blocks are authoritative when present; the
+        // top-level "text" field (which concatenates blocks, thinking included) is used
+        // only as a fallback for older messages that carry no content blocks.
+        QJsonArray content_blocks = message.value("content").toArray();
+        if (content_blocks.isEmpty()) {
+            return message.value("text").toString();
         }
 
-        QJsonArray content_blocks = message.value("content").toArray();
+        QStringList parts;
         for (const QJsonValue& block_value : content_blocks) {
             QJsonObject block = block_value.toObject();
             if (block.value("type").toString() == "text") {
                 QString block_text = block.value("text").toString();
-                if ((!block_text.isEmpty()) && (block_text != top_level_text)) {
+                if (!block_text.isEmpty()) {
                     parts.append(block_text);
                 }
             }

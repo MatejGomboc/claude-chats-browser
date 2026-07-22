@@ -12,6 +12,8 @@ qt_standard_project_setup()
 
 qt_add_executable(claude-chats-browser
     WIN32 MACOSX_BUNDLE
+    src/collapsible_section.cpp
+    src/collapsible_section.hpp
     src/conversation_list_model.cpp
     src/conversation_list_model.hpp
     src/conversation_reader.cpp
@@ -24,6 +26,14 @@ qt_add_executable(claude-chats-browser
     src/main_window.cpp
     src/main_window.hpp
     src/main_window.ui
+    src/message_widget.cpp
+    src/message_widget.hpp
+)
+
+qt_add_resources(claude-chats-browser "theme"
+    PREFIX "/"
+    BASE "resources"
+    FILES resources/theme.qss
 )
 
 target_compile_definitions(claude-chats-browser

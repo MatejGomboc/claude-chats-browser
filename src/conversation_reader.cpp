@@ -13,73 +13,67 @@
 */
 
 #include "conversation_reader.hpp"
+#include "message_widget.hpp"
+#include <QFrame>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QLabel>
+#include <QScrollBar>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QStringList>
 #include <QVariant>
+#include <QVBoxLayout>
 #include <QtLogging>
 
 namespace ChatsBrowser
 {
-    namespace
-    {
-        const QString PLACEHOLDER_MARKDOWN = "*Select a conversation to read it here.*";
-    }
-
     ConversationReader::ConversationReader(QWidget* parent) :
-        QTextBrowser(parent)
+        QScrollArea(parent)
     {
-        setOpenExternalLinks(true);
-        setMarkdown(PLACEHOLDER_MARKDOWN);
+        setWidgetResizable(true);
+
+        m_container = new QWidget(this);
+        m_container->setObjectName("readerContainer");
+
+        m_layout = new QVBoxLayout(m_container);
+        m_layout->setContentsMargins(0, 0, 0, 0);
+        m_layout->setSpacing(0);
+
+        m_placeholder = new QLabel(m_container);
+        m_placeholder->setObjectName("readerPlaceholder");
+        m_placeholder->setAlignment(Qt::AlignCenter);
+        m_placeholder->setWordWrap(true);
+        m_layout->addWidget(m_placeholder);
+
+        m_layout->addStretch();
+
+        setWidget(m_container);
+        showPlaceholder("Select a conversation to read it here.");
     }
 
-    QString ConversationReader::senderLabel(const QString& sender)
+    void ConversationReader::clearMessages()
     {
-        if (sender == "human") {
-            return "You";
+        // Remove every item except the trailing stretch (always the last item).
+        while (m_layout->count() > 1) {
+            QLayoutItem* item = m_layout->takeAt(0);
+            if (item->widget() != nullptr) {
+                item->widget()->deleteLater();
+            }
+            delete item;
         }
-        if (sender == "assistant") {
-            return "Claude";
-        }
-        return sender.isEmpty() ? QString("Unknown") : sender;
+        m_placeholder = nullptr;
     }
 
-    QString ConversationReader::buildMarkdown(const QString& conversation_uuid, bool* found_any_content)
+    void ConversationReader::showPlaceholder(const QString& text)
     {
-        *found_any_content = false;
-
-        QSqlDatabase database = QSqlDatabase::database("main");
-        QSqlQuery query(database);
-        query.prepare("SELECT sender, created_at, text FROM messages"
-                      " WHERE conversation_uuid = ? ORDER BY created_at, rowid");
-        query.addBindValue(conversation_uuid);
-        if (!query.exec()) {
-            qWarning() << "Message query failed:" << query.lastError().text();
-            return QString("*Could not load this conversation.*");
-        }
-
-        QStringList blocks;
-        while (query.next()) {
-            QString sender = query.value(0).toString();
-            QString created_at = query.value(1).toString();
-            QString text = query.value(2).toString();
-
-            if (text.trimmed().isEmpty()) {
-                continue;
-            }
-            *found_any_content = true;
-
-            QString header = QString("**%1**").arg(senderLabel(sender));
-            if (!created_at.isEmpty()) {
-                header += QString("  ·  *%1*").arg(created_at);
-            }
-            blocks.append(header + "\n\n" + text);
-        }
-
-        // Turns are separated by a horizontal rule; each message's own markdown
-        // (code fences, lists, emphasis) is preserved for QTextBrowser to render.
-        return blocks.join("\n\n---\n\n");
+        clearMessages();
+        m_placeholder = new QLabel(m_container);
+        m_placeholder->setObjectName("readerPlaceholder");
+        m_placeholder->setAlignment(Qt::AlignCenter);
+        m_placeholder->setWordWrap(true);
+        m_placeholder->setText(text);
+        m_layout->insertWidget(0, m_placeholder);
     }
 
     void ConversationReader::showConversation(const QString& conversation_uuid)
@@ -91,20 +85,56 @@ namespace ChatsBrowser
             return;
         }
 
-        bool found_any_content = false;
-        QString markdown = buildMarkdown(conversation_uuid, &found_any_content);
-        if (!found_any_content) {
-            setMarkdown("*This conversation was deleted; its content is no longer available.*");
+        QSqlDatabase database = QSqlDatabase::database("main");
+        QSqlQuery query(database);
+        query.prepare("SELECT raw_json FROM messages WHERE conversation_uuid = ? ORDER BY created_at, rowid");
+        query.addBindValue(conversation_uuid);
+        if (!query.exec()) {
+            qWarning() << "Message query failed:" << query.lastError().text();
+            showPlaceholder("Could not load this conversation.");
             return;
         }
 
-        setMarkdown(markdown);
-        moveCursor(QTextCursor::Start);
+        clearMessages();
+
+        int insert_position = 0;
+        bool any_content = false;
+        while (query.next()) {
+            QJsonDocument document = QJsonDocument::fromJson(query.value(0).toString().toUtf8());
+            if (!document.isObject()) {
+                continue;
+            }
+
+            MessageWidget* message_widget = new MessageWidget(document.object(), m_container);
+            if (!message_widget->hasRenderedContent()) {
+                message_widget->deleteLater();
+                continue;
+            }
+
+            if (any_content) {
+                QFrame* divider = new QFrame(m_container);
+                divider->setObjectName("messageDivider");
+                divider->setFrameShape(QFrame::HLine);
+                m_layout->insertWidget(insert_position, divider);
+                insert_position++;
+            }
+
+            m_layout->insertWidget(insert_position, message_widget);
+            insert_position++;
+            any_content = true;
+        }
+
+        if (!any_content) {
+            showPlaceholder("This conversation was deleted; its content is no longer available.");
+            return;
+        }
+
+        verticalScrollBar()->setValue(0);
     }
 
     void ConversationReader::clearConversation()
     {
         m_conversation_uuid.clear();
-        setMarkdown(PLACEHOLDER_MARKDOWN);
+        showPlaceholder("Select a conversation to read it here.");
     }
 }

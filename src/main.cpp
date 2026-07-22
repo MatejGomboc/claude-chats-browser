@@ -18,8 +18,21 @@
 #include <QApplication>
 #include <QCommandLineOption>
 #include <QCommandLineParser>
+#include <QFile>
 #include <QTextStream>
 #include <cstdio>
+
+namespace
+{
+    //! Applies the bundled VS Code Dark+ inspired stylesheet to the application.
+    void applyTheme(QApplication& application)
+    {
+        QFile theme_file(":/theme.qss");
+        if (theme_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            application.setStyleSheet(QString::fromUtf8(theme_file.readAll()));
+        }
+    }
+}
 
 namespace
 {
@@ -57,6 +70,8 @@ int main(int argc, char* argv[])
     QApplication::setApplicationDisplayName("Claude Chats Browser");
     QApplication::setApplicationVersion(APP_VERSION_STRING);
     QApplication::setOrganizationName("MatejGomboc");
+
+    applyTheme(application);
 
     QCommandLineParser parser;
     parser.setApplicationDescription("Browse, search and read claude.ai data exports offline.");

@@ -14,13 +14,24 @@
 
 #pragma once
 
+#include <QScrollArea>
 #include <QString>
-#include <QTextBrowser>
+
+QT_BEGIN_NAMESPACE
+class QLabel;
+class QVBoxLayout;
+class QWidget;
+QT_END_NAMESPACE
 
 namespace ChatsBrowser
 {
-    //! Renders a single conversation's messages, newest turn last, as formatted markdown.
-    class ConversationReader : public QTextBrowser {
+    /*!
+        Scrollable reader for a single conversation.
+
+        Each message becomes a MessageWidget stacked top to bottom, so text, thinking
+        blocks and tool calls render structurally rather than as one flat blob.
+    */
+    class ConversationReader : public QScrollArea {
         Q_OBJECT
 
     public:
@@ -33,12 +44,15 @@ namespace ChatsBrowser
         void clearConversation();
 
     private:
-        //! Builds the markdown document for one conversation from its messages.
-        [[nodiscard]] static QString buildMarkdown(const QString& conversation_uuid, bool* found_any_content);
+        //! Removes all message widgets, leaving the trailing stretch in place.
+        void clearMessages();
 
-        //! A human-readable label for a message sender ("You", "Claude", or the raw value).
-        [[nodiscard]] static QString senderLabel(const QString& sender);
+        //! Shows a single centred placeholder message instead of a conversation.
+        void showPlaceholder(const QString& text);
 
+        QWidget* m_container{nullptr}; //!< Scrolled content widget.
+        QVBoxLayout* m_layout{nullptr}; //!< Vertical stack of message widgets, with a trailing stretch.
+        QLabel* m_placeholder{nullptr}; //!< Shown when there is nothing to read.
         QString m_conversation_uuid;
     };
 }
