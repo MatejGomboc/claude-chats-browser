@@ -1,26 +1,25 @@
 /*
-    VS Code Dark+ theme for claude-chats-browser.
+    Claude-flavoured dark theme for claude-chats-browser: a near-black base with
+    yellow and orange accents (VS Code Dark+ structure, warm accent palette).
 
-    Palette (VS Code Dark+ defaults):
+    Palette:
       editor background        #1E1E1E
-      side bar background      #252526
-      activity bar background  #333333
+      side bar background       #252526
       tab inactive background  #2D2D2D
       widget/input background  #3C3C3C
       border                   #2D2D2D / #3C3C3C
       foreground               #CCCCCC
       muted foreground         #858585 / #969696
       section header           #BBBBBB
-      active selection         #094771
-      inactive selection       #37373D
+      accent orange            #CE7B3C   (tabs, focus, status bar)
+      active selection         #5A3E1E   (dark amber)
+      inactive selection       #3A342A
       hover                    #2A2D2E
-      accent blue              #007ACC
-      status bar blue          #007ACC
-      keyword blue             #569CD6   (You / human)
-      type teal                #4EC9B0   (Claude / assistant)
-      comment green            #6A9955   (thinking)
-      function yellow          #DCDCAA   (tool call)
-      string orange            #CE9178   (tool result / code)
+      "You" yellow             #DCDCAA
+      "Claude" orange          #CE9178
+      thinking gold            #A89355
+      tool call / result       #DCDCAA border, #CE9178 text
+      link amber               #E0A96D
 */
 
 QWidget {
@@ -67,7 +66,7 @@ QMenu::item {
 }
 
 QMenu::item:selected {
-    background-color: #094771;
+    background-color: #5A3E1E;
 }
 
 QMenu::separator {
@@ -120,11 +119,11 @@ QLineEdit {
     border-radius: 2px;
     padding: 4px 6px;
     margin: 0 8px 6px 8px;
-    selection-background-color: #264F78;
+    selection-background-color: #7A4E22;
 }
 
 QLineEdit:focus {
-    border: 1px solid #007ACC;
+    border: 1px solid #CE7B3C;
 }
 
 QListView {
@@ -144,12 +143,12 @@ QListView::item:hover {
 }
 
 QListView::item:selected {
-    background-color: #094771;
+    background-color: #5A3E1E;
     color: #FFFFFF;
 }
 
 QListView::item:selected:!active {
-    background-color: #37373D;
+    background-color: #3A342A;
     color: #CCCCCC;
 }
 
@@ -178,7 +177,7 @@ QTabBar::tab {
 QTabBar::tab:selected {
     background-color: #1E1E1E;
     color: #FFFFFF;
-    border-top: 1px solid #007ACC;
+    border-top: 1px solid #CE7B3C;
 }
 
 QTabBar::tab:hover:!selected {
@@ -235,9 +234,9 @@ QTabBar::close-button:hover {
 }
 
 #thinkingBody {
-    color: #6A9955;
+    color: #A89355;
     background-color: #232323;
-    border-left: 2px solid #6A9955;
+    border-left: 2px solid #A89355;
     padding: 6px 10px;
 }
 

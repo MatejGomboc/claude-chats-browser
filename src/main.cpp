@@ -16,17 +16,28 @@
 #include "import_worker.hpp"
 #include "main_window.hpp"
 #include <QApplication>
+#include <QColor>
 #include <QCommandLineOption>
 #include <QCommandLineParser>
 #include <QFile>
+#include <QPalette>
 #include <QTextStream>
 #include <cstdio>
 
 namespace
 {
-    //! Applies the bundled VS Code Dark+ inspired stylesheet to the application.
+    //! Applies the bundled Claude-flavoured dark theme (stylesheet + accent palette).
     void applyTheme(QApplication& application)
     {
+        // Palette entries the stylesheet cannot reach: markdown link colour and the
+        // text-selection highlight, kept in the warm accent family (no default blue).
+        QPalette palette = application.palette();
+        palette.setColor(QPalette::Link, QColor("#E0A96D"));
+        palette.setColor(QPalette::LinkVisited, QColor("#C98A4E"));
+        palette.setColor(QPalette::Highlight, QColor("#5A3E1E"));
+        palette.setColor(QPalette::HighlightedText, QColor("#FFFFFF"));
+        application.setPalette(palette);
+
         QFile theme_file(":/theme.qss");
         if (theme_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             application.setStyleSheet(QString::fromUtf8(theme_file.readAll()));
