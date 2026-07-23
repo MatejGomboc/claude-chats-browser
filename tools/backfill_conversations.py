@@ -26,6 +26,7 @@ import argparse
 import getpass
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -39,6 +40,45 @@ except ImportError:
 BASE = "https://claude.ai/api"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+
+UUID_RE = re.compile(
+    r"\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}"
+    r"-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\Z")
+
+
+def require_uuid(value, what="uuid"):
+    """Return value iff it is a bare UUID, else raise ValueError.
+
+    Every id used to build a request URL or an on-disk filename comes from the
+    export file or the remote API, so it crosses a trust boundary. A UUID
+    contains only hex digits and hyphens, so a value that passes this check
+    cannot smuggle a path separator ("/", "..") or a URL metacharacter — this
+    is the sanitiser for both the partial-SSRF and the path-injection paths.
+    """
+    if not isinstance(value, str) or UUID_RE.match(value) is None:
+        raise ValueError(f"refusing to use a non-UUID {what}: {value!r}")
+    return value
+
+
+def conversation_output_path(out_dir, uuid):
+    """Absolute path to <out_dir>/<uuid>.json, verified to stay within out_dir."""
+    require_uuid(uuid, "conversation uuid")
+    base = os.path.realpath(out_dir)
+    # os.path.basename strips any directory components (belt-and-braces on top of the
+    # UUID check), so the file can only ever be created directly inside out_dir.
+    filename = os.path.basename(uuid + ".json")
+    path = os.path.realpath(os.path.join(base, filename))
+    if os.path.commonpath((base, path)) != base:
+        raise ValueError(f"refusing path outside {base!r}: {uuid!r}")
+    return path
+
+
+def conversation_api_path(org_uuid, conversation_uuid):
+    """Backend API path for one conversation, built from validated UUIDs only."""
+    require_uuid(org_uuid, "organisation uuid")
+    require_uuid(conversation_uuid, "conversation uuid")
+    return (f"/organizations/{org_uuid}/chat_conversations/{conversation_uuid}"
+            "?tree=True&rendering_mode=messages&render_all_tools=true")
 
 
 def load_export(export_dir):
@@ -97,24 +137,28 @@ def pick_org(session_key):
 
 
 def fetch(export_dir, out_dir, session_key):
+    out_dir = os.path.realpath(out_dir)
     convs = load_export(export_dir)
     todo = missing_uuids(convs)
     os.makedirs(out_dir, exist_ok=True)
     done = {f[:-5] for f in os.listdir(out_dir) if f.endswith(".json")}
     todo = [u for u in todo if u not in done]
     print(f"{len(done)} already fetched, {len(todo)} to go")
-    org = pick_org(session_key)
+    org = require_uuid(pick_org(session_key), "organisation uuid")
 
     errors = 0
     for i, uuid in enumerate(todo, 1):
-        path = (f"/organizations/{org}/chat_conversations/{uuid}"
-                f"?tree=True&rendering_mode=messages&render_all_tools=true")
+        try:
+            api_path = conversation_api_path(org, uuid)
+            out_path = conversation_output_path(out_dir, uuid)
+        except ValueError as exc:
+            print(f"[{i}/{len(todo)}] skipping — {exc}")
+            continue
         delay = 1.2
         for attempt in range(5):
             try:
-                data = api_get(path, session_key)
-                with open(os.path.join(out_dir, uuid + ".json"), "w",
-                          encoding="utf-8") as f:
+                data = api_get(api_path, session_key)
+                with open(out_path, "w", encoding="utf-8") as f:
                     json.dump(data, f, ensure_ascii=False)
                 print(f"[{i}/{len(todo)}] {uuid} ok "
                       f"({len(data.get('chat_messages', []))} msgs)")
@@ -150,12 +194,16 @@ def fetch(export_dir, out_dir, session_key):
 
 
 def merge(export_dir, out_dir):
+    out_dir = os.path.realpath(out_dir)
     convs = load_export(export_dir)
     replaced = 0
     for idx, c in enumerate(convs):
         if is_full(c):
             continue
-        path = os.path.join(out_dir, c["uuid"] + ".json")
+        try:
+            path = conversation_output_path(out_dir, c.get("uuid", ""))
+        except ValueError:
+            continue
         if not os.path.isfile(path):
             continue
         with open(path, encoding="utf-8") as f:
@@ -184,7 +232,10 @@ def main():
                     help="directory for fetched conversations "
                          "(default: <export>/backfill)")
     args = ap.parse_args()
-    out_dir = args.out or os.path.join(args.export, "backfill")
+    # Normalise operator-supplied directories up front so downstream joins have
+    # no "../" to resolve.
+    args.export = os.path.realpath(args.export)
+    out_dir = os.path.realpath(args.out or os.path.join(args.export, "backfill"))
 
     if args.command == "list":
         convs = load_export(args.export)
@@ -218,11 +269,10 @@ def main():
         good = next(c for c in convs if is_full(c) and c.get("name"))
         print(f"Fetching known-good conversation: {good['name']!r} "
               f"({good['uuid']}, {len(good['chat_messages'])} msgs in export)")
-        org = pick_org(session_key)
+        org = require_uuid(pick_org(session_key), "organisation uuid")
         try:
-            data = api_get(f"/organizations/{org}/chat_conversations/"
-                           f"{good['uuid']}?tree=True&rendering_mode=messages"
-                           f"&render_all_tools=true", session_key, debug=True)
+            data = api_get(conversation_api_path(org, good["uuid"]),
+                           session_key, debug=True)
             print(f"SUCCESS — server returned {data.get('name')!r} with "
                   f"{len(data.get('chat_messages', []))} messages")
         except urllib.error.HTTPError as e:
