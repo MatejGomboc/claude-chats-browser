@@ -14,6 +14,9 @@
 
 #pragma once
 
+#include "conversation_tree.hpp"
+#include <QHash>
+#include <QJsonObject>
 #include <QScrollArea>
 #include <QString>
 
@@ -28,8 +31,10 @@ namespace ChatsBrowser
     /*!
         Scrollable reader for a single conversation.
 
-        Each message becomes a MessageWidget stacked top to bottom, so text, thinking
-        blocks and tool calls render structurally rather than as one flat blob.
+        A conversation is a tree: editing a prompt or retrying a reply creates sibling
+        messages under a shared parent. The reader renders one linear path through that
+        tree (each message a MessageWidget) and shows "< k / n >" branch controls at every
+        fork, so alternate versions stay reachable — like claude.ai.
     */
     class ConversationReader : public QScrollArea {
         Q_OBJECT
@@ -47,6 +52,12 @@ namespace ChatsBrowser
         void resizeEvent(QResizeEvent* event) override;
 
     private:
+        //! Loads the conversation's messages and builds the parent→children tree.
+        void buildTree(const QString& conversation_uuid);
+
+        //! Renders the currently-selected path through the tree into message widgets.
+        void renderPath(bool reset_scroll);
+
         //! Forces the scrolled content tall enough for word-wrapped messages at the current width.
         void updateContentHeight();
 
@@ -60,5 +71,8 @@ namespace ChatsBrowser
         QVBoxLayout* m_layout{nullptr}; //!< Vertical stack of message widgets, with a trailing stretch.
         QLabel* m_placeholder{nullptr}; //!< Shown when there is nothing to read.
         QString m_conversation_uuid;
+
+        QHash<QString, QJsonObject> m_messages; //!< uuid → message JSON for the current conversation.
+        ConversationTree m_tree; //!< Reply tree + branch selection for the current conversation.
     };
 }

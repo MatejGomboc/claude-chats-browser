@@ -228,6 +228,27 @@ QTabBar::close-button:hover {
     color: #D4D4D4;
 }
 
+QToolButton#branchNav {
+    color: #858585;
+    background: transparent;
+    border: none;
+    font-size: 12pt;
+    padding: 0 4px;
+}
+
+QToolButton#branchNav:hover:enabled {
+    color: #CE9178;
+}
+
+QToolButton#branchNav:disabled {
+    color: #4A4A4A;
+}
+
+#branchPosition {
+    color: #858585;
+    font-size: 8pt;
+}
+
 #messageDivider {
     color: #2D2D2D;
     max-height: 1px;

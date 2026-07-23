@@ -14,15 +14,17 @@
 
 #include "message_widget.hpp"
 #include "collapsible_section.hpp"
+#include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonValue>
 #include <QLabel>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 namespace ChatsBrowser
 {
-    MessageWidget::MessageWidget(const QJsonObject& message, QWidget* parent) :
+    MessageWidget::MessageWidget(const QJsonObject& message, int branch_index, int branch_count, QWidget* parent) :
         QWidget(parent)
     {
         QString sender = message.value("sender").toString();
@@ -31,9 +33,7 @@ namespace ChatsBrowser
         layout->setContentsMargins(12, 10, 12, 10);
         layout->setSpacing(6);
 
-        QLabel* header = new QLabel(senderLabel(sender), this);
-        header->setObjectName(sender == "human" ? "senderHuman" : "senderAssistant");
-        layout->addWidget(header);
+        addHeader(layout, sender, branch_index, branch_count);
 
         // Render content blocks in their original order. Consecutive text blocks are
         // merged into one markdown label; thinking and tool blocks each become a
@@ -94,6 +94,48 @@ namespace ChatsBrowser
     bool MessageWidget::hasRenderedContent() const
     {
         return m_has_content;
+    }
+
+    void MessageWidget::addHeader(QVBoxLayout* layout, const QString& sender, int branch_index, int branch_count)
+    {
+        QWidget* header_row = new QWidget(this);
+        QHBoxLayout* header_layout = new QHBoxLayout(header_row);
+        header_layout->setContentsMargins(0, 0, 0, 0);
+        header_layout->setSpacing(6);
+
+        QLabel* sender_label = new QLabel(senderLabel(sender), header_row);
+        sender_label->setObjectName(sender == "human" ? "senderHuman" : "senderAssistant");
+        header_layout->addWidget(sender_label);
+
+        // A fork: this message is one of several sibling branches (an edit or a retry).
+        // Offer claude.ai-style "< k / n >" navigation between them.
+        if (branch_count > 1) {
+            QToolButton* prev = new QToolButton(header_row);
+            prev->setObjectName("branchNav");
+            prev->setText("‹");
+            prev->setEnabled(branch_index > 0);
+            prev->setToolTip("Previous version");
+            prev->setCursor(Qt::PointingHandCursor);
+            connect(prev, &QToolButton::clicked, this, &MessageWidget::branchPrevRequested);
+
+            QLabel* position = new QLabel(QString("%1 / %2").arg(branch_index + 1).arg(branch_count), header_row);
+            position->setObjectName("branchPosition");
+
+            QToolButton* next = new QToolButton(header_row);
+            next->setObjectName("branchNav");
+            next->setText("›");
+            next->setEnabled(branch_index < branch_count - 1);
+            next->setToolTip("Next version");
+            next->setCursor(Qt::PointingHandCursor);
+            connect(next, &QToolButton::clicked, this, &MessageWidget::branchNextRequested);
+
+            header_layout->addWidget(prev);
+            header_layout->addWidget(position);
+            header_layout->addWidget(next);
+        }
+
+        header_layout->addStretch();
+        layout->addWidget(header_row);
     }
 
     void MessageWidget::addMarkdownLabel(QVBoxLayout* layout, const QString& markdown, const char* object_name)

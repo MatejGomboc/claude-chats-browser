@@ -105,6 +105,14 @@ cmake --build build/macos-clang-debug
 
 Each preset has a `-release` twin. `cmake --list-presets` shows what's available on your platform.
 
+### Tests
+
+Unit tests (Qt Test) run via CTest:
+
+```bash
+ctest --test-dir build/windows-msvc-debug --output-on-failure
+```
+
 ## Getting Your Export
 
 1. On [claude.ai](https://claude.ai): **Settings → Privacy → Export data**

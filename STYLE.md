@@ -477,6 +477,12 @@ concurrency checks are promoted to errors. To suppress a specific check on a lin
 int x = legacy_function(); // NOLINT(bugprone-unused-return-value)
 ```
 
+### Tests
+
+Unit tests use the Qt Test framework, live in `tests/`, and run via CTest
+(`ctest --test-dir build/<preset>`). Pure logic (e.g. the conversation reply
+tree) is factored out of the widgets so it can be tested without a GUI.
+
 ### Sanitisers
 
 Planned: CMake sanitiser presets (AddressSanitizer/UndefinedBehaviorSanitizer on Linux).
