@@ -43,6 +43,7 @@ qt_add_resources(claude-chats-browser "assets"
         resources/theme.qss
         resources/icons/chat.svg
         resources/icons/close.svg
+        resources/icons/copy.svg
 )
 
 target_compile_definitions(claude-chats-browser
@@ -113,14 +114,16 @@ qt_add_executable(tst_reader_performance
     tests/tst_reader_performance.cpp
     src/code_highlighter.cpp
     src/code_highlighter.hpp
+    src/collapsible_section.cpp
+    src/collapsible_section.hpp
     src/conversation_reader.cpp
     src/conversation_reader.hpp
     src/conversation_tree.cpp
     src/conversation_tree.hpp
+    src/icon_util.cpp
+    src/icon_util.hpp
     src/message_widget.cpp
     src/message_widget.hpp
-    src/collapsible_section.cpp
-    src/collapsible_section.hpp
 )
 
 target_include_directories(tst_reader_performance PRIVATE src)
@@ -136,6 +139,7 @@ target_link_libraries(tst_reader_performance
         Qt6::Core
         Qt6::Widgets
         Qt6::Sql
+        Qt6::Svg
         Qt6::Test
 )
 

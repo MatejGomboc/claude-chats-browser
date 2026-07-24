@@ -20,6 +20,7 @@
 #include <functional>
 
 QT_BEGIN_NAMESPACE
+class QToolButton;
 class QVBoxLayout;
 QT_END_NAMESPACE
 
@@ -53,12 +54,15 @@ namespace ChatsBrowser
         void branchNextRequested();
 
     private:
-        void addHeader(QVBoxLayout* layout, const QString& sender, int branch_index, int branch_count);
+        void addHeader(QVBoxLayout* layout, const QString& sender, const QString& created_at, int branch_index, int branch_count);
+
+        //! Renders the message's attachments (pasted text) and file references (images).
+        void addAttachments(QVBoxLayout* layout, const QJsonObject& message);
 
         //! Renders markdown, breaking fenced code blocks out into highlighted code editors.
         void addRichText(QVBoxLayout* layout, const QString& markdown);
 
-        //! Adds a syntax-highlighted, read-only code block sized to its content.
+        //! Adds a syntax-highlighted, read-only code block (with a copy button) sized to its content.
         void addCodeBlock(QVBoxLayout* layout, const QString& code);
 
         void addMarkdownLabel(QVBoxLayout* layout, const QString& markdown, const char* object_name);
@@ -67,6 +71,7 @@ namespace ChatsBrowser
         void addCollapsible(QVBoxLayout* layout, const QString& title, std::function<QString()> body_provider, bool monospace);
 
         [[nodiscard]] static QString senderLabel(const QString& sender);
+        [[nodiscard]] static QString formatTimestamp(const QString& iso_timestamp);
         [[nodiscard]] static QString prettyJson(const QJsonValue& value);
 
         //! Serialises a JSON value into self-owned bytes (independent of the source document).
@@ -76,5 +81,7 @@ namespace ChatsBrowser
         [[nodiscard]] static QJsonValue unwrapValue(const QByteArray& bytes);
 
         bool m_has_content{false};
+        QString m_message_text; //!< The message's visible text, for the copy-message button.
+        QToolButton* m_copy_button{nullptr}; //!< Header copy button; hidden for text-less messages.
     };
 }
