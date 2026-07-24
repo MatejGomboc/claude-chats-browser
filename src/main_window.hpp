@@ -37,6 +37,7 @@ namespace ChatsBrowser
 {
     class ConversationListModel;
     class ConversationReader;
+    class FindBar;
 
     //! Application main window: VS Code-style shell around the conversation browser and reader.
     class MainWindow : public QMainWindow {
@@ -69,6 +70,13 @@ namespace ChatsBrowser
         //! Opens (or re-activates) a tab for the given conversation and shows it.
         void openConversationTab(const QString& uuid, const QString& title, bool has_content);
 
+        //! Reveals the in-conversation find bar (or focuses the sidebar search if no
+        //! conversation is open) and re-runs any current query.
+        void showFindBar();
+
+        //! Hides the find bar and clears the reader's highlights.
+        void hideFindBar();
+
         //! Refreshes the breadcrumb bar for the given conversation (empty clears it).
         void updateBreadcrumb(const QString& uuid);
 
@@ -90,6 +98,7 @@ namespace ChatsBrowser
         std::unique_ptr<Ui::MainWindow> m_ui; //!< Designer-generated form.
         ConversationListModel* m_conversation_model{nullptr}; //!< Sidebar model (owned by this window).
         ConversationReader* m_reader{nullptr}; //!< Right-pane reader for the current tab.
+        FindBar* m_find_bar{nullptr}; //!< In-conversation find strip below the breadcrumb.
         QLineEdit* m_search_edit{nullptr}; //!< Search-as-you-type box in the sidebar.
         QListView* m_conversation_view{nullptr}; //!< Sidebar conversation list.
         QTabBar* m_tabs{nullptr}; //!< Open-conversation tabs above the reader.

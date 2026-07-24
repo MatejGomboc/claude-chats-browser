@@ -252,6 +252,35 @@ QToolButton#copyButton:hover {
     border-radius: 3px;
 }
 
+/* In-conversation find bar (below the breadcrumb) */
+
+#findBar {
+    background-color: #252526;
+    border-bottom: 1px solid #2D2D2D;
+}
+
+#findInput {
+    margin: 0;
+}
+
+#findCount {
+    color: #858585;
+    font-size: 8pt;
+    padding: 0 4px;
+}
+
+QToolButton#findNav {
+    color: #A9A9A9;
+    background: transparent;
+    border: none;
+    font-size: 12pt;
+    padding: 0 6px;
+}
+
+QToolButton#findNav:hover {
+    color: #CE9178;
+}
+
 QPlainTextEdit#codeBlock {
     background-color: #1A1A1A;
     color: #D4D4D4;

@@ -17,6 +17,7 @@
 #include "conversation_list_model.hpp"
 #include "conversation_reader.hpp"
 #include "database.hpp"
+#include "find_bar.hpp"
 #include "icon_util.hpp"
 #include "import_worker.hpp"
 #include <QAction>
@@ -97,6 +98,13 @@ namespace ChatsBrowser
             showDeterminateProgress(done, total, QString());
         });
         connect(m_reader, &ConversationReader::renderFinished, this, &MainWindow::hideProgress);
+        // Once a (possibly chunked) render settles, re-apply any open find so matches in the
+        // messages that streamed in late are highlighted too.
+        connect(m_reader, &ConversationReader::renderFinished, this, [this]() {
+            if (m_find_bar->isVisible() && !m_find_bar->query().isEmpty()) {
+                m_reader->findText(m_find_bar->query());
+            }
+        });
 
         // Search: the query runs off the UI thread. Only show a busy indicator if the query
         // is still running after a short delay, so quick searches do not flicker the bar.
@@ -189,6 +197,9 @@ namespace ChatsBrowser
         m_breadcrumb->setObjectName("breadcrumb");
         m_breadcrumb->setText(" ");
 
+        m_find_bar = new FindBar(editor_area);
+        m_find_bar->hide();
+
         m_reader = new ConversationReader(editor_area);
 
         QVBoxLayout* editor_layout = new QVBoxLayout(editor_area);
@@ -196,7 +207,17 @@ namespace ChatsBrowser
         editor_layout->setSpacing(0);
         editor_layout->addWidget(m_tabs);
         editor_layout->addWidget(m_breadcrumb);
+        editor_layout->addWidget(m_find_bar);
         editor_layout->addWidget(m_reader, 1);
+
+        // Find bar drives the reader; the reader reports match counts back to the bar.
+        connect(m_find_bar, &FindBar::queryChanged, this, [this](const QString& term) {
+            m_reader->findText(term);
+        });
+        connect(m_find_bar, &FindBar::nextRequested, m_reader, &ConversationReader::findNext);
+        connect(m_find_bar, &FindBar::prevRequested, m_reader, &ConversationReader::findPrev);
+        connect(m_find_bar, &FindBar::closed, this, &MainWindow::hideFindBar);
+        connect(m_reader, &ConversationReader::findResultsChanged, m_find_bar, &FindBar::setResultLabel);
 
         return editor_area;
     }
@@ -213,8 +234,14 @@ namespace ChatsBrowser
         connect(quit_action, &QAction::triggered, this, &MainWindow::close);
 
         QMenu* view_menu = menuBar()->addMenu("&View");
-        QAction* focus_search_action = view_menu->addAction("&Search Conversations");
-        focus_search_action->setShortcut(QKeySequence::Find);
+        // Editor-scoped find (like VS Code's Ctrl+F): search within the open conversation.
+        QAction* find_action = view_menu->addAction("&Find in Conversation");
+        find_action->setShortcut(QKeySequence::Find);
+        connect(find_action, &QAction::triggered, this, &MainWindow::showFindBar);
+
+        // Workspace-scoped find (like VS Code's Ctrl+Shift+F): jump to the sidebar search.
+        QAction* focus_search_action = view_menu->addAction("Search &All Conversations");
+        focus_search_action->setShortcut(QKeySequence("Ctrl+Shift+F"));
         connect(focus_search_action, &QAction::triggered, this, [this]() {
             m_search_edit->setFocus();
             m_search_edit->selectAll();
@@ -335,8 +362,31 @@ namespace ChatsBrowser
         onTabChanged(index);
     }
 
+    void MainWindow::showFindBar()
+    {
+        // Nothing to search inside when no conversation is open — fall back to the sidebar
+        // search so Ctrl+F is never a dead key.
+        if (m_tabs->currentIndex() < 0) {
+            m_search_edit->setFocus();
+            m_search_edit->selectAll();
+            return;
+        }
+        m_find_bar->activate();
+        m_reader->findText(m_find_bar->query());
+    }
+
+    void MainWindow::hideFindBar()
+    {
+        m_find_bar->hide();
+        m_reader->clearFind();
+        m_reader->setFocus();
+    }
+
     void MainWindow::onTabChanged(int index)
     {
+        // The find applies to one conversation; switching away retires it.
+        hideFindBar();
+
         if (index < 0) {
             m_reader->clearConversation();
             updateBreadcrumb(QString());

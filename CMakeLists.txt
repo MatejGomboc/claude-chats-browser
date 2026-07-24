@@ -24,6 +24,8 @@ qt_add_executable(claude-chats-browser
     src/conversation_tree.hpp
     src/database.cpp
     src/database.hpp
+    src/find_bar.cpp
+    src/find_bar.hpp
     src/icon_util.cpp
     src/icon_util.hpp
     src/import_worker.cpp

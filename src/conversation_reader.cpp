@@ -80,6 +80,13 @@ namespace ChatsBrowser
         m_render_generation++;
         m_pending_nodes.clear();
         m_pending_index = 0;
+
+        // These message widgets are about to be deleted; drop the find's references to them
+        // so no stale pointer survives. The find bar (in the main window) re-runs after the
+        // next render finishes if it is still open.
+        m_find_matches.clear();
+        m_find_current = -1;
+
         emit renderFinished();
 
         // Remove every item except the trailing stretch (always the last item).
@@ -239,6 +246,84 @@ namespace ChatsBrowser
     {
         m_conversation_uuid.clear();
         showPlaceholder("Select a conversation to read it here.");
+    }
+
+    int ConversationReader::findText(const QString& term)
+    {
+        // Drop the previous run's highlights before recomputing.
+        for (MessageWidget* widget : m_find_matches) {
+            widget->setSearchHighlight(MessageWidget::SearchHighlight::None);
+        }
+        m_find_matches.clear();
+        m_find_current = -1;
+        m_find_term = term;
+
+        if (term.isEmpty()) {
+            emit findResultsChanged(0, 0);
+            return 0;
+        }
+
+        // Collect matching message widgets in display order (skip dividers and placeholder).
+        for (int i = 0; i < m_layout->count(); ++i) {
+            MessageWidget* message = qobject_cast<MessageWidget*>(m_layout->itemAt(i)->widget());
+            if (message == nullptr) {
+                continue;
+            }
+            if (message->searchableText().contains(term, Qt::CaseInsensitive)) {
+                message->setSearchHighlight(MessageWidget::SearchHighlight::Match);
+                m_find_matches.append(message);
+            }
+        }
+
+        if (!m_find_matches.isEmpty()) {
+            m_find_current = 0;
+            focusCurrentMatch();
+        }
+        emit findResultsChanged(m_find_current + 1, static_cast<int>(m_find_matches.size()));
+        return static_cast<int>(m_find_matches.size());
+    }
+
+    void ConversationReader::findNext()
+    {
+        if (m_find_matches.isEmpty()) {
+            return;
+        }
+        m_find_current = (m_find_current + 1) % static_cast<int>(m_find_matches.size());
+        focusCurrentMatch();
+        emit findResultsChanged(m_find_current + 1, static_cast<int>(m_find_matches.size()));
+    }
+
+    void ConversationReader::findPrev()
+    {
+        if (m_find_matches.isEmpty()) {
+            return;
+        }
+        const int count = static_cast<int>(m_find_matches.size());
+        m_find_current = ((m_find_current - 1) + count) % count;
+        focusCurrentMatch();
+        emit findResultsChanged(m_find_current + 1, count);
+    }
+
+    void ConversationReader::clearFind()
+    {
+        for (MessageWidget* widget : m_find_matches) {
+            widget->setSearchHighlight(MessageWidget::SearchHighlight::None);
+        }
+        m_find_matches.clear();
+        m_find_current = -1;
+        m_find_term.clear();
+        emit findResultsChanged(0, 0);
+    }
+
+    void ConversationReader::focusCurrentMatch()
+    {
+        if ((m_find_current < 0) || (m_find_current >= static_cast<int>(m_find_matches.size()))) {
+            return;
+        }
+        for (int i = 0; i < m_find_matches.size(); ++i) {
+            m_find_matches.at(i)->setSearchHighlight(i == m_find_current ? MessageWidget::SearchHighlight::Current : MessageWidget::SearchHighlight::Match);
+        }
+        ensureWidgetVisible(m_find_matches.at(m_find_current), 50, 80);
     }
 
     void ConversationReader::resizeEvent(QResizeEvent* event)

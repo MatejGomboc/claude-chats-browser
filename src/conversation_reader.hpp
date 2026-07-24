@@ -34,6 +34,8 @@ QT_END_NAMESPACE
 
 namespace ChatsBrowser
 {
+    class MessageWidget;
+
     /*!
         Scrollable reader for a single conversation.
 
@@ -54,12 +56,27 @@ namespace ChatsBrowser
         //! Clears the view back to its placeholder prompt.
         void clearConversation();
 
+        //! Highlights every message whose text contains \a term and jumps to the first
+        //! match. Case-insensitive; an empty term clears the find. Returns the match count.
+        int findText(const QString& term);
+
+        //! Moves to the next / previous match, wrapping around. No-op without matches.
+        void findNext();
+        void findPrev();
+
+        //! Clears any active find: removes highlights and forgets the matches.
+        void clearFind();
+
     signals:
         //! Progress of a chunked render (emitted only for conversations that need chunking).
         void renderProgressChanged(int done_messages, int total_messages);
 
         //! Emitted when a chunked render completes or is superseded.
         void renderFinished();
+
+        //! Reports the state of the current find: the 1-based current match (0 if none)
+        //! out of \a total matches. Drives the find bar's "k / n" counter.
+        void findResultsChanged(int current, int total);
 
     protected:
         void resizeEvent(QResizeEvent* event) override;
@@ -90,6 +107,9 @@ namespace ChatsBrowser
         //! Removes all message widgets, leaving the trailing stretch in place.
         void clearMessages();
 
+        //! Scrolls the current match into view and moves the Current highlight onto it.
+        void focusCurrentMatch();
+
         //! Shows a single centred placeholder message instead of a conversation.
         void showPlaceholder(const QString& text);
 
@@ -109,5 +129,9 @@ namespace ChatsBrowser
         bool m_any_content{false}; //!< Whether the render in progress produced a widget yet.
         QTimer* m_height_timer{nullptr}; //!< Trailing height update after resize storms.
         QElapsedTimer m_height_throttle; //!< Rate-limits immediate height updates on resize.
+
+        QString m_find_term; //!< Active find term (empty when no find is running).
+        QList<MessageWidget*> m_find_matches; //!< Matching message widgets, in display order.
+        int m_find_current{-1}; //!< Index into m_find_matches of the focused match (-1 = none).
     };
 }

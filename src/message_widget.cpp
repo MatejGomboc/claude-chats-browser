@@ -41,6 +41,10 @@ namespace ChatsBrowser
     {
         QString sender = message.value("sender").toString();
 
+        // Paint our own background so a find highlight (a class-selector background rule)
+        // is actually rendered; without this the widget stays transparent.
+        setAttribute(Qt::WA_StyledBackground, true);
+
         QVBoxLayout* layout = new QVBoxLayout(this);
         layout->setContentsMargins(12, 10, 12, 10);
         layout->setSpacing(6);
@@ -136,6 +140,33 @@ namespace ChatsBrowser
     bool MessageWidget::hasRenderedContent() const
     {
         return m_has_content;
+    }
+
+    QString MessageWidget::searchableText() const
+    {
+        return m_message_text;
+    }
+
+    void MessageWidget::setSearchHighlight(SearchHighlight state)
+    {
+        if (state == m_search_highlight) {
+            return;
+        }
+        m_search_highlight = state;
+
+        // Scope the rule to our own type so the tint lands on the message frame only and
+        // never cascades into the child labels/code editors.
+        switch (state) {
+        case SearchHighlight::None:
+            setStyleSheet(QString());
+            break;
+        case SearchHighlight::Match:
+            setStyleSheet("ChatsBrowser--MessageWidget { background-color: #2E2A1E; }");
+            break;
+        case SearchHighlight::Current:
+            setStyleSheet("ChatsBrowser--MessageWidget { background-color: #4A3A1E; }");
+            break;
+        }
     }
 
     void MessageWidget::addHeader(QVBoxLayout* layout, const QString& sender, const QString& created_at, int branch_index, int branch_count)
