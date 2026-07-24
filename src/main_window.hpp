@@ -31,6 +31,7 @@ class QModelIndex;
 class QProgressBar;
 class QTabBar;
 class QTimer;
+class QToolButton;
 QT_END_NAMESPACE
 
 namespace ChatsBrowser
@@ -77,6 +78,13 @@ namespace ChatsBrowser
         //! Hides the find bar and clears the reader's highlights.
         void hideFindBar();
 
+        //! Enables the Artifacts button and labels it with the artifact count for the
+        //! conversation (disabled when it has none).
+        void updateArtifactsButton(const QString& uuid);
+
+        //! Opens the artifacts window for the current conversation.
+        void openArtifactsPanel();
+
         //! Refreshes the breadcrumb bar for the given conversation (empty clears it).
         void updateBreadcrumb(const QString& uuid);
 
@@ -103,6 +111,7 @@ namespace ChatsBrowser
         QListView* m_conversation_view{nullptr}; //!< Sidebar conversation list.
         QTabBar* m_tabs{nullptr}; //!< Open-conversation tabs above the reader.
         QLabel* m_breadcrumb{nullptr}; //!< Path bar below the tabs.
+        QToolButton* m_artifacts_button{nullptr}; //!< Opens the artifacts window; disabled when none.
         QLabel* m_status_totals{nullptr}; //!< Left status-bar segment: total conversation count.
         QLabel* m_status_conversation{nullptr}; //!< Right status-bar segment: current conversation info.
         QProgressBar* m_progress_bar{nullptr}; //!< Shared status-bar progress/busy indicator (render, import, search).

@@ -12,6 +12,10 @@ qt_standard_project_setup()
 
 qt_add_executable(claude-chats-browser
     WIN32 MACOSX_BUNDLE
+    src/artifact_reconstructor.cpp
+    src/artifact_reconstructor.hpp
+    src/artifacts_panel.cpp
+    src/artifacts_panel.hpp
     src/code_highlighter.cpp
     src/code_highlighter.hpp
     src/collapsible_section.cpp
@@ -111,6 +115,30 @@ target_link_libraries(tst_conversation_tree
 
 add_test(NAME conversation_tree COMMAND tst_conversation_tree)
 
+# Replaying create/update/rewrite artifact ops must yield each artifact's final content.
+qt_add_executable(tst_artifact_reconstructor
+    tests/tst_artifact_reconstructor.cpp
+    src/artifact_reconstructor.cpp
+    src/artifact_reconstructor.hpp
+)
+
+target_include_directories(tst_artifact_reconstructor PRIVATE src)
+
+if(MSVC)
+    target_compile_options(tst_artifact_reconstructor PRIVATE /W4 /WX)
+else()
+    target_compile_options(tst_artifact_reconstructor PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
+
+target_link_libraries(tst_artifact_reconstructor
+    PRIVATE
+        Qt6::Core
+        Qt6::Sql
+        Qt6::Test
+)
+
+add_test(NAME artifact_reconstructor COMMAND tst_artifact_reconstructor)
+
 # GUI test: opening a large conversation must stream in without freezing the UI.
 qt_add_executable(tst_reader_performance
     tests/tst_reader_performance.cpp
@@ -181,6 +209,9 @@ add_test(NAME search_async COMMAND tst_search_async)
 # So ctest can find the Qt runtime DLLs (Windows has no rpath) without the caller
 # having to put Qt's bin directory on PATH first, and run the GUI test headless.
 set_tests_properties(conversation_tree PROPERTIES
+    ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")
+
+set_tests_properties(artifact_reconstructor PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")
 
 # Runs on the real platform (the offscreen QPA ships no fonts, which makes text layout
