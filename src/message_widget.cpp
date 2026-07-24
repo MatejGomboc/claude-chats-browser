@@ -73,17 +73,36 @@ namespace ChatsBrowser
                 flush_text();
                 QString thinking = block.value("thinking").toString();
                 if (!thinking.trimmed().isEmpty()) {
-                    addCollapsible(layout, "Thinking", thinking, false);
+                    addCollapsible(
+                        layout, "Thinking",
+                        [thinking]() {
+                            return thinking;
+                        },
+                        false);
                     m_has_content = true;
                 }
             } else if (type == "tool_use") {
                 flush_text();
                 QString name = block.value("name").toString();
-                addCollapsible(layout, QString("Tool call · %1").arg(name), prettyJson(block.value("input")), true);
+                // Capture self-owned bytes, not the QJsonValue: the value references the
+                // caller's QJsonDocument, which is gone by the time the section expands.
+                QByteArray input_bytes = wrapValue(block.value("input"));
+                addCollapsible(
+                    layout, QString("Tool call · %1").arg(name),
+                    [input_bytes]() {
+                        return prettyJson(unwrapValue(input_bytes));
+                    },
+                    true);
                 m_has_content = true;
             } else if (type == "tool_result") {
                 flush_text();
-                addCollapsible(layout, "Tool result", prettyJson(block.value("content")), true);
+                QByteArray content_bytes = wrapValue(block.value("content"));
+                addCollapsible(
+                    layout, "Tool result",
+                    [content_bytes]() {
+                        return prettyJson(unwrapValue(content_bytes));
+                    },
+                    true);
                 m_has_content = true;
             }
         }
@@ -150,17 +169,22 @@ namespace ChatsBrowser
         layout->addWidget(label);
     }
 
-    void MessageWidget::addCollapsible(QVBoxLayout* layout, const QString& title, const QString& body, bool monospace)
+    void MessageWidget::addCollapsible(QVBoxLayout* layout, const QString& title, std::function<QString()> body_provider, bool monospace)
     {
         CollapsibleSection* section = new CollapsibleSection(title, false, this);
 
-        QLabel* body_label = new QLabel(section);
-        body_label->setObjectName(monospace ? "toolBody" : "thinkingBody");
-        body_label->setTextFormat(monospace ? Qt::PlainText : Qt::MarkdownText);
-        body_label->setText(body);
-        body_label->setWordWrap(true);
-        body_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        section->setContentWidget(body_label);
+        // The body label (and the body text itself, e.g. pretty-printed tool JSON) is
+        // only built when the user first expands the section — building thousands of
+        // them eagerly is what froze the UI on large conversations.
+        section->setContentFactory([body_provider = std::move(body_provider), monospace](QWidget* parent) -> QWidget* {
+            QLabel* body_label = new QLabel(parent);
+            body_label->setObjectName(monospace ? "toolBody" : "thinkingBody");
+            body_label->setTextFormat(monospace ? Qt::PlainText : Qt::MarkdownText);
+            body_label->setText(body_provider());
+            body_label->setWordWrap(true);
+            body_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
+            return body_label;
+        });
 
         layout->addWidget(section);
     }
@@ -174,6 +198,20 @@ namespace ChatsBrowser
             return "Claude";
         }
         return sender.isEmpty() ? QString("Unknown") : sender;
+    }
+
+    QByteArray MessageWidget::wrapValue(const QJsonValue& value)
+    {
+        // Serialise any value (object/array/string/...) into self-owned bytes by wrapping
+        // it in a one-element array, so the captured data no longer depends on the source
+        // QJsonDocument's lifetime.
+        return QJsonDocument(QJsonArray{value}).toJson(QJsonDocument::Compact);
+    }
+
+    QJsonValue MessageWidget::unwrapValue(const QByteArray& bytes)
+    {
+        const QJsonArray wrapper = QJsonDocument::fromJson(bytes).array();
+        return wrapper.isEmpty() ? QJsonValue() : wrapper.at(0);
     }
 
     QString MessageWidget::prettyJson(const QJsonValue& value)

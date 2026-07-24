@@ -105,7 +105,43 @@ target_link_libraries(tst_conversation_tree
 
 add_test(NAME conversation_tree COMMAND tst_conversation_tree)
 
+# GUI test: opening a large conversation must stream in without freezing the UI.
+qt_add_executable(tst_reader_performance
+    tests/tst_reader_performance.cpp
+    src/conversation_reader.cpp
+    src/conversation_reader.hpp
+    src/conversation_tree.cpp
+    src/conversation_tree.hpp
+    src/message_widget.cpp
+    src/message_widget.hpp
+    src/collapsible_section.cpp
+    src/collapsible_section.hpp
+)
+
+target_include_directories(tst_reader_performance PRIVATE src)
+
+if(MSVC)
+    target_compile_options(tst_reader_performance PRIVATE /W4 /WX)
+else()
+    target_compile_options(tst_reader_performance PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
+
+target_link_libraries(tst_reader_performance
+    PRIVATE
+        Qt6::Core
+        Qt6::Widgets
+        Qt6::Sql
+        Qt6::Test
+)
+
+add_test(NAME reader_performance COMMAND tst_reader_performance)
+
 # So ctest can find the Qt runtime DLLs (Windows has no rpath) without the caller
-# having to put Qt's bin directory on PATH first.
+# having to put Qt's bin directory on PATH first, and run the GUI test headless.
 set_tests_properties(conversation_tree PROPERTIES
+    ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")
+
+# Runs on the real platform (the offscreen QPA ships no fonts, which makes text layout
+# pathologically slow); harmless locally, and CI can supply a font + offscreen later.
+set_tests_properties(reader_performance PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")

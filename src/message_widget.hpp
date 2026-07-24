@@ -17,6 +17,7 @@
 #include <QJsonObject>
 #include <QString>
 #include <QWidget>
+#include <functional>
 
 QT_BEGIN_NAMESPACE
 class QVBoxLayout;
@@ -54,10 +55,18 @@ namespace ChatsBrowser
     private:
         void addHeader(QVBoxLayout* layout, const QString& sender, int branch_index, int branch_count);
         void addMarkdownLabel(QVBoxLayout* layout, const QString& markdown, const char* object_name);
-        void addCollapsible(QVBoxLayout* layout, const QString& title, const QString& body, bool monospace);
+
+        //! Adds a collapsed section whose body text is produced lazily on first expansion.
+        void addCollapsible(QVBoxLayout* layout, const QString& title, std::function<QString()> body_provider, bool monospace);
 
         [[nodiscard]] static QString senderLabel(const QString& sender);
         [[nodiscard]] static QString prettyJson(const QJsonValue& value);
+
+        //! Serialises a JSON value into self-owned bytes (independent of the source document).
+        [[nodiscard]] static QByteArray wrapValue(const QJsonValue& value);
+
+        //! Recovers a value previously stored by wrapValue().
+        [[nodiscard]] static QJsonValue unwrapValue(const QByteArray& bytes);
 
         bool m_has_content{false};
     };

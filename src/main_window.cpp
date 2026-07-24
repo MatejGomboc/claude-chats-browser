@@ -33,6 +33,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QModelIndex>
+#include <QProgressBar>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QStatusBar>
@@ -79,10 +80,25 @@ namespace ChatsBrowser
         central_layout->addWidget(editor_area, 1);
 
         m_status_totals = new QLabel(this);
+        m_render_progress = new QProgressBar(this);
+        m_render_progress->setObjectName("renderProgress");
+        m_render_progress->setFixedWidth(160);
+        m_render_progress->setTextVisible(false);
+        m_render_progress->hide();
         m_status_conversation = new QLabel(this);
         statusBar()->addWidget(m_status_totals);
+        statusBar()->addWidget(m_render_progress);
         statusBar()->addPermanentWidget(m_status_conversation);
         statusBar()->setSizeGripEnabled(false);
+
+        connect(m_reader, &ConversationReader::renderProgressChanged, this, [this](int done_messages, int total_messages) {
+            m_render_progress->setMaximum(total_messages);
+            m_render_progress->setValue(done_messages);
+            m_render_progress->show();
+        });
+        connect(m_reader, &ConversationReader::renderFinished, this, [this]() {
+            m_render_progress->hide();
+        });
 
         setupMenus();
         setupImportWorker();

@@ -15,10 +15,16 @@
 #pragma once
 
 #include "conversation_tree.hpp"
+#include <QElapsedTimer>
 #include <QHash>
 #include <QJsonObject>
+#include <QList>
 #include <QScrollArea>
 #include <QString>
+
+QT_BEGIN_NAMESPACE
+class QTimer;
+QT_END_NAMESPACE
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -48,6 +54,13 @@ namespace ChatsBrowser
         //! Clears the view back to its placeholder prompt.
         void clearConversation();
 
+    signals:
+        //! Progress of a chunked render (emitted only for conversations that need chunking).
+        void renderProgressChanged(int done_messages, int total_messages);
+
+        //! Emitted when a chunked render completes or is superseded.
+        void renderFinished();
+
     protected:
         void resizeEvent(QResizeEvent* event) override;
 
@@ -55,11 +68,24 @@ namespace ChatsBrowser
         //! Loads the conversation's messages and builds the parent→children tree.
         void buildTree(const QString& conversation_uuid);
 
-        //! Renders the currently-selected path through the tree into message widgets.
+        /*!
+            Starts rendering the currently-selected path through the tree.
+
+            The first chunk of message widgets is built synchronously so the viewport
+            fills immediately; the rest stream in through queued zero-delay timer steps,
+            keeping the UI responsive on large conversations. A generation counter
+            cancels pending chunks when a new render starts.
+        */
         void renderPath(bool reset_scroll);
+
+        //! Builds the next chunk of pending message widgets; reschedules itself while more remain.
+        void appendPendingChunk(int generation);
 
         //! Forces the scrolled content tall enough for word-wrapped messages at the current width.
         void updateContentHeight();
+
+        //! Throttled updateContentHeight for resize storms.
+        void scheduleHeightUpdate();
 
         //! Removes all message widgets, leaving the trailing stretch in place.
         void clearMessages();
@@ -72,7 +98,16 @@ namespace ChatsBrowser
         QLabel* m_placeholder{nullptr}; //!< Shown when there is nothing to read.
         QString m_conversation_uuid;
 
-        QHash<QString, QJsonObject> m_messages; //!< uuid → message JSON for the current conversation.
+        //! uuid → raw message JSON. Parsed lazily per rendered chunk: parsing hundreds of
+        //! large blobs up front was a measurable part of the open-conversation hang.
+        QHash<QString, QByteArray> m_raw_messages;
         ConversationTree m_tree; //!< Reply tree + branch selection for the current conversation.
+
+        QList<PathNode> m_pending_nodes; //!< Remaining path nodes of the render in progress.
+        int m_pending_index{0}; //!< Next node to build in m_pending_nodes.
+        int m_render_generation{0}; //!< Bumped per render; stale queued chunks bail out.
+        bool m_any_content{false}; //!< Whether the render in progress produced a widget yet.
+        QTimer* m_height_timer{nullptr}; //!< Trailing height update after resize storms.
+        QElapsedTimer m_height_throttle; //!< Rate-limits immediate height updates on resize.
     };
 }
