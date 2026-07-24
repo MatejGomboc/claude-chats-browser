@@ -78,6 +78,15 @@ namespace ChatsBrowser
         //! Updates the status-bar total-conversations counter from the database.
         void updateTotalsStatus();
 
+        //! Shows the shared progress bar in indeterminate (busy) mode with a status message.
+        void showBusyProgress(const QString& message);
+
+        //! Shows the shared progress bar tracking done/total, with a status message.
+        void showDeterminateProgress(int done, int total, const QString& message);
+
+        //! Hides the shared progress bar and clears any transient status message.
+        void hideProgress();
+
         std::unique_ptr<Ui::MainWindow> m_ui; //!< Designer-generated form.
         ConversationListModel* m_conversation_model{nullptr}; //!< Sidebar model (owned by this window).
         ConversationReader* m_reader{nullptr}; //!< Right-pane reader for the current tab.
@@ -87,8 +96,9 @@ namespace ChatsBrowser
         QLabel* m_breadcrumb{nullptr}; //!< Path bar below the tabs.
         QLabel* m_status_totals{nullptr}; //!< Left status-bar segment: total conversation count.
         QLabel* m_status_conversation{nullptr}; //!< Right status-bar segment: current conversation info.
-        QProgressBar* m_render_progress{nullptr}; //!< Status-bar progress of a streaming conversation render.
+        QProgressBar* m_progress_bar{nullptr}; //!< Shared status-bar progress/busy indicator (render, import, search).
         QTimer* m_search_timer{nullptr}; //!< Debounce timer for the search box.
+        QTimer* m_search_busy_timer{nullptr}; //!< Delays the search busy indicator so quick searches do not flicker.
         QAction* m_import_action{nullptr}; //!< File menu import action; disabled while importing.
         QThread m_import_thread; //!< Worker thread owning the ImportWorker.
     };

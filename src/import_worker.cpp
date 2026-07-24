@@ -90,12 +90,14 @@ namespace ChatsBrowser
             return;
         }
 
-        // The export is one big JSON array; parsing it whole is a one-off cost per import,
-        // paid on this worker thread. Replace with a streaming parser only if real exports
-        // outgrow available memory.
+        // The export is one big JSON array; reading and parsing it whole is a one-off cost
+        // per import, paid on this worker thread (so the UI never freezes) but with no
+        // numeric progress — signal a busy phase for these steps.
+        emit progressPhase("Reading export…");
         QByteArray raw_json = conversations_file.readAll();
         conversations_file.close();
 
+        emit progressPhase("Parsing conversations…");
         QJsonParseError parse_error{};
         QJsonDocument document = QJsonDocument::fromJson(raw_json, &parse_error);
         raw_json.clear();
