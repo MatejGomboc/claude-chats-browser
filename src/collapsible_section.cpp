@@ -45,9 +45,30 @@ namespace ChatsBrowser
         layout()->addWidget(m_content);
     }
 
+    void CollapsibleSection::setContentFactory(std::function<QWidget*(QWidget*)> factory)
+    {
+        m_factory = std::move(factory);
+        if (m_toggle->isChecked()) {
+            materialiseContent();
+        }
+    }
+
+    void CollapsibleSection::materialiseContent()
+    {
+        if ((m_content != nullptr) || (!m_factory)) {
+            return;
+        }
+        std::function<QWidget*(QWidget*)> factory = std::move(m_factory);
+        m_factory = nullptr;
+        setContentWidget(factory(this));
+    }
+
     void CollapsibleSection::onToggled(bool expanded)
     {
         m_toggle->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
+        if (expanded) {
+            materialiseContent();
+        }
         if (m_content != nullptr) {
             m_content->setVisible(expanded);
         }

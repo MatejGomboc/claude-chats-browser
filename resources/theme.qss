@@ -300,6 +300,19 @@ QStatusBar QLabel {
     font-size: 8pt;
 }
 
+QProgressBar#renderProgress {
+    background-color: #8F5527;
+    border: none;
+    border-radius: 3px;
+    max-height: 6px;
+    margin: 0 6px;
+}
+
+QProgressBar#renderProgress::chunk {
+    background-color: #FFFFFF;
+    border-radius: 3px;
+}
+
 /* Overlay scrollbars: translucent, revealed on hover */
 
 QScrollBar:vertical {

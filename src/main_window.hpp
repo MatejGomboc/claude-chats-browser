@@ -28,6 +28,7 @@ class QLabel;
 class QLineEdit;
 class QListView;
 class QModelIndex;
+class QProgressBar;
 class QTabBar;
 class QTimer;
 QT_END_NAMESPACE
@@ -86,6 +87,7 @@ namespace ChatsBrowser
         QLabel* m_breadcrumb{nullptr}; //!< Path bar below the tabs.
         QLabel* m_status_totals{nullptr}; //!< Left status-bar segment: total conversation count.
         QLabel* m_status_conversation{nullptr}; //!< Right status-bar segment: current conversation info.
+        QProgressBar* m_render_progress{nullptr}; //!< Status-bar progress of a streaming conversation render.
         QTimer* m_search_timer{nullptr}; //!< Debounce timer for the search box.
         QAction* m_import_action{nullptr}; //!< File menu import action; disabled while importing.
         QThread m_import_thread; //!< Worker thread owning the ImportWorker.
