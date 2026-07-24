@@ -54,6 +54,13 @@ namespace ChatsBrowser
 
     private:
         void addHeader(QVBoxLayout* layout, const QString& sender, int branch_index, int branch_count);
+
+        //! Renders markdown, breaking fenced code blocks out into highlighted code editors.
+        void addRichText(QVBoxLayout* layout, const QString& markdown);
+
+        //! Adds a syntax-highlighted, read-only code block sized to its content.
+        void addCodeBlock(QVBoxLayout* layout, const QString& code);
+
         void addMarkdownLabel(QVBoxLayout* layout, const QString& markdown, const char* object_name);
 
         //! Adds a collapsed section whose body text is produced lazily on first expansion.

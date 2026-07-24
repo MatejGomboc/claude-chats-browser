@@ -228,6 +228,14 @@ QTabBar::close-button:hover {
     color: #D4D4D4;
 }
 
+QPlainTextEdit#codeBlock {
+    background-color: #1A1A1A;
+    color: #D4D4D4;
+    border: 1px solid #2D2D2D;
+    border-radius: 4px;
+    selection-background-color: #264F78;
+}
+
 QToolButton#branchNav {
     color: #858585;
     background: transparent;
