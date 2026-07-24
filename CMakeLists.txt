@@ -12,6 +12,8 @@ qt_standard_project_setup()
 
 qt_add_executable(claude-chats-browser
     WIN32 MACOSX_BUNDLE
+    src/code_highlighter.cpp
+    src/code_highlighter.hpp
     src/collapsible_section.cpp
     src/collapsible_section.hpp
     src/conversation_list_model.cpp
@@ -109,6 +111,8 @@ add_test(NAME conversation_tree COMMAND tst_conversation_tree)
 # GUI test: opening a large conversation must stream in without freezing the UI.
 qt_add_executable(tst_reader_performance
     tests/tst_reader_performance.cpp
+    src/code_highlighter.cpp
+    src/code_highlighter.hpp
     src/conversation_reader.cpp
     src/conversation_reader.hpp
     src/conversation_tree.cpp

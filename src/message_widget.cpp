@@ -13,12 +13,17 @@
 */
 
 #include "message_widget.hpp"
+#include "code_highlighter.hpp"
 #include "collapsible_section.hpp"
+#include <QFont>
+#include <QFontMetrics>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonValue>
 #include <QLabel>
+#include <QPlainTextEdit>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -42,7 +47,7 @@ namespace ChatsBrowser
 
         const auto flush_text = [&]() {
             if (!pending_text.trimmed().isEmpty()) {
-                addMarkdownLabel(layout, pending_text, "messageText");
+                addRichText(layout, pending_text);
                 m_has_content = true;
             }
             pending_text.clear();
@@ -155,6 +160,79 @@ namespace ChatsBrowser
 
         header_layout->addStretch();
         layout->addWidget(header_row);
+    }
+
+    void MessageWidget::addRichText(QVBoxLayout* layout, const QString& markdown)
+    {
+        // Split the text on ``` fences: prose renders as markdown, code renders in a
+        // highlighted editor. (QLabel markdown shows code as flat monospace with no colour.)
+        const QStringList lines = markdown.split('\n');
+        QStringList prose_lines;
+        QStringList code_lines;
+        bool in_code = false;
+
+        const auto flush_prose = [&]() {
+            const QString prose = prose_lines.join('\n');
+            if (!prose.trimmed().isEmpty()) {
+                addMarkdownLabel(layout, prose, "messageText");
+            }
+            prose_lines.clear();
+        };
+        const auto flush_code = [&]() {
+            addCodeBlock(layout, code_lines.join('\n'));
+            code_lines.clear();
+        };
+
+        for (const QString& line : lines) {
+            if (line.trimmed().startsWith("```")) {
+                if (in_code) {
+                    flush_code();
+                    in_code = false;
+                } else {
+                    flush_prose();
+                    in_code = true;
+                }
+            } else if (in_code) {
+                code_lines.append(line);
+            } else {
+                prose_lines.append(line);
+            }
+        }
+
+        if (in_code) {
+            flush_code(); // an unterminated fence: render what we have as code
+        } else {
+            flush_prose();
+        }
+    }
+
+    void MessageWidget::addCodeBlock(QVBoxLayout* layout, const QString& code)
+    {
+        QPlainTextEdit* editor = new QPlainTextEdit(this);
+        editor->setObjectName("codeBlock");
+        editor->setReadOnly(true);
+        editor->setFrameShape(QFrame::NoFrame);
+        editor->setLineWrapMode(QPlainTextEdit::NoWrap);
+        editor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        editor->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        editor->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+        editor->document()->setDocumentMargin(8);
+
+        QFont mono("Cascadia Code");
+        mono.setStyleHint(QFont::Monospace);
+        mono.setPointSize(9);
+        editor->setFont(mono);
+
+        editor->setPlainText(code);
+        new CodeHighlighter(editor->document()); // owned by the document
+
+        // Fixed height fitting all lines (no vertical scrollbar). Long lines scroll
+        // horizontally rather than wrap, so leave room for that scrollbar.
+        const QFontMetrics metrics(mono);
+        const int line_count = qMax(1, editor->document()->blockCount());
+        editor->setFixedHeight((line_count * metrics.lineSpacing()) + (2 * 8) + 14);
+
+        layout->addWidget(editor);
     }
 
     void MessageWidget::addMarkdownLabel(QVBoxLayout* layout, const QString& markdown, const char* object_name)
