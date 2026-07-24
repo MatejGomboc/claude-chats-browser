@@ -16,15 +16,84 @@
 #include "icon_util.hpp"
 #include <QBrush>
 #include <QColor>
+#include <QFutureWatcher>
 #include <QIcon>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QUuid>
 #include <QVariant>
+#include <QtConcurrent>
 #include <QtLogging>
 
 namespace ChatsBrowser
 {
+    namespace
+    {
+        //! Turns free-typed search text into an FTS5 phrase-prefix query ("term term"*).
+        QString toFtsQuery(const QString& filter)
+        {
+            QString escaped = filter;
+            escaped.replace('"', "\"\"");
+            return QString("\"%1\"*").arg(escaped);
+        }
+
+        //! Runs the conversation query on a private connection (called on a worker thread).
+        QList<ConversationRow> runQuery(const QString& database_path, const QString& filter)
+        {
+            QList<ConversationRow> rows;
+
+            // A unique, short-lived connection so concurrent searches never clash and the
+            // worker never touches the UI thread's "main" connection.
+            const QString connection_name = QStringLiteral("search-%1").arg(QUuid::createUuid().toString(QUuid::Id128));
+            {
+                QSqlDatabase database = QSqlDatabase::addDatabase("QSQLITE", connection_name);
+                database.setDatabaseName(database_path);
+                if (database.open()) {
+                    QSqlQuery query(database);
+
+                    if (filter.isEmpty()) {
+                        query.prepare("SELECT uuid, name, created_at, updated_at, message_count, has_content"
+                                      " FROM conversations ORDER BY updated_at DESC");
+                    } else {
+                        QString like_pattern = filter;
+                        like_pattern.replace('\\', "\\\\");
+                        like_pattern.replace('%', "\\%");
+                        like_pattern.replace('_', "\\_");
+                        like_pattern = QString("%%%1%%").arg(like_pattern);
+
+                        query.prepare("SELECT uuid, name, created_at, updated_at, message_count, has_content"
+                                      " FROM conversations"
+                                      " WHERE (name LIKE ? ESCAPE '\\')"
+                                      "    OR (uuid IN (SELECT conversation_uuid FROM messages WHERE rowid IN"
+                                      "        (SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?)))"
+                                      " ORDER BY updated_at DESC");
+                        query.addBindValue(like_pattern);
+                        query.addBindValue(toFtsQuery(filter));
+                    }
+
+                    if (query.exec()) {
+                        while (query.next()) {
+                            ConversationRow row;
+                            row.uuid = query.value(0).toString();
+                            row.name = query.value(1).toString();
+                            row.created_at = query.value(2).toString();
+                            row.updated_at = query.value(3).toString();
+                            row.message_count = query.value(4).toInt();
+                            row.has_content = query.value(5).toBool();
+                            rows.append(row);
+                        }
+                    } else {
+                        qWarning() << "Conversation query failed:" << query.lastError().text();
+                    }
+                }
+            }
+            QSqlDatabase::removeDatabase(connection_name);
+
+            return rows;
+        }
+    }
+
     ConversationListModel::ConversationListModel(QObject* parent) :
         QAbstractListModel(parent)
     {
@@ -41,59 +110,26 @@ namespace ChatsBrowser
         reload();
     }
 
-    QString ConversationListModel::toFtsQuery(const QString& filter)
-    {
-        QString escaped = filter;
-        escaped.replace('"', "\"\"");
-        return QString("\"%1\"*").arg(escaped);
-    }
-
     void ConversationListModel::reload()
     {
-        beginResetModel();
-        m_rows.clear();
+        const quint64 generation = ++m_query_generation;
+        emit searchStarted();
 
-        QSqlDatabase database = QSqlDatabase::database("main");
-        QSqlQuery query(database);
+        const QString database_path = QSqlDatabase::database("main").databaseName();
+        const QString filter = m_filter;
 
-        if (m_filter.isEmpty()) {
-            query.prepare("SELECT uuid, name, created_at, updated_at, message_count, has_content"
-                          " FROM conversations ORDER BY updated_at DESC");
-        } else {
-            QString like_pattern = m_filter;
-            like_pattern.replace('\\', "\\\\");
-            like_pattern.replace('%', "\\%");
-            like_pattern.replace('_', "\\_");
-            like_pattern = QString("%%%1%%").arg(like_pattern);
-
-            query.prepare("SELECT uuid, name, created_at, updated_at, message_count, has_content"
-                          " FROM conversations"
-                          " WHERE (name LIKE ? ESCAPE '\\')"
-                          "    OR (uuid IN (SELECT conversation_uuid FROM messages WHERE rowid IN"
-                          "        (SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?)))"
-                          " ORDER BY updated_at DESC");
-            query.addBindValue(like_pattern);
-            query.addBindValue(toFtsQuery(m_filter));
-        }
-
-        if (!query.exec()) {
-            qWarning() << "Conversation query failed:" << query.lastError().text();
-            endResetModel();
-            return;
-        }
-
-        while (query.next()) {
-            Row row;
-            row.uuid = query.value(0).toString();
-            row.name = query.value(1).toString();
-            row.created_at = query.value(2).toString();
-            row.updated_at = query.value(3).toString();
-            row.message_count = query.value(4).toInt();
-            row.has_content = query.value(5).toBool();
-            m_rows.append(row);
-        }
-
-        endResetModel();
+        QFutureWatcher<QList<ConversationRow>>* watcher = new QFutureWatcher<QList<ConversationRow>>(this);
+        connect(watcher, &QFutureWatcherBase::finished, this, [this, watcher, generation]() {
+            // Ignore results of a query that a newer one has already superseded.
+            if (generation == m_query_generation) {
+                beginResetModel();
+                m_rows = watcher->result();
+                endResetModel();
+                emit searchFinished();
+            }
+            watcher->deleteLater();
+        });
+        watcher->setFuture(QtConcurrent::run(runQuery, database_path, filter));
     }
 
     int ConversationListModel::rowCount(const QModelIndex& parent) const
@@ -110,7 +146,7 @@ namespace ChatsBrowser
             return QVariant();
         }
 
-        const Row& row = m_rows.at(index.row());
+        const ConversationRow& row = m_rows.at(index.row());
 
         switch (role) {
         case Qt::DisplayRole:

@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Sql Svg Test)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Sql Svg Test Concurrent)
 
 qt_standard_project_setup()
 
@@ -65,6 +65,7 @@ target_link_libraries(claude-chats-browser
         Qt6::Widgets
         Qt6::Sql
         Qt6::Svg
+        Qt6::Concurrent
 )
 
 install(TARGETS claude-chats-browser
@@ -136,6 +137,37 @@ target_link_libraries(tst_reader_performance
 
 add_test(NAME reader_performance COMMAND tst_reader_performance)
 
+# Proves the conversation search runs off the UI thread (never blocks on a slow query).
+qt_add_executable(tst_search_async
+    tests/tst_search_async.cpp
+    src/conversation_list_model.cpp
+    src/conversation_list_model.hpp
+    src/database.cpp
+    src/database.hpp
+    src/icon_util.cpp
+    src/icon_util.hpp
+)
+
+target_include_directories(tst_search_async PRIVATE src)
+
+if(MSVC)
+    target_compile_options(tst_search_async PRIVATE /W4 /WX)
+else()
+    target_compile_options(tst_search_async PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
+
+target_link_libraries(tst_search_async
+    PRIVATE
+        Qt6::Core
+        Qt6::Widgets
+        Qt6::Sql
+        Qt6::Svg
+        Qt6::Concurrent
+        Qt6::Test
+)
+
+add_test(NAME search_async COMMAND tst_search_async)
+
 # So ctest can find the Qt runtime DLLs (Windows has no rpath) without the caller
 # having to put Qt's bin directory on PATH first, and run the GUI test headless.
 set_tests_properties(conversation_tree PROPERTIES
@@ -144,4 +176,7 @@ set_tests_properties(conversation_tree PROPERTIES
 # Runs on the real platform (the offscreen QPA ships no fonts, which makes text layout
 # pathologically slow); harmless locally, and CI can supply a font + offscreen later.
 set_tests_properties(reader_performance PROPERTIES
+    ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")
+
+set_tests_properties(search_async PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")

@@ -38,6 +38,9 @@ namespace ChatsBrowser
         void importExport(const QString& export_dir);
 
     signals:
+        //! Emitted for phases without numeric progress (reading, parsing) to show a busy state.
+        void progressPhase(const QString& message);
+
         //! Emitted periodically while conversations are being written.
         void progressChanged(int done_conversations, int total_conversations);
 

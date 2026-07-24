@@ -47,6 +47,7 @@ namespace ChatsBrowser
     namespace
     {
         constexpr int SEARCH_DEBOUNCE_MS = 150;
+        constexpr int SEARCH_BUSY_DELAY_MS = 150;
         constexpr int STATUS_MESSAGE_TIMEOUT_MS = 10000;
         constexpr int SIDEBAR_WIDTH = 300;
 
@@ -80,24 +81,37 @@ namespace ChatsBrowser
         central_layout->addWidget(editor_area, 1);
 
         m_status_totals = new QLabel(this);
-        m_render_progress = new QProgressBar(this);
-        m_render_progress->setObjectName("renderProgress");
-        m_render_progress->setFixedWidth(160);
-        m_render_progress->setTextVisible(false);
-        m_render_progress->hide();
+        m_progress_bar = new QProgressBar(this);
+        m_progress_bar->setObjectName("renderProgress");
+        m_progress_bar->setFixedWidth(160);
+        m_progress_bar->setTextVisible(false);
+        m_progress_bar->hide();
         m_status_conversation = new QLabel(this);
         statusBar()->addWidget(m_status_totals);
-        statusBar()->addWidget(m_render_progress);
+        statusBar()->addWidget(m_progress_bar);
         statusBar()->addPermanentWidget(m_status_conversation);
         statusBar()->setSizeGripEnabled(false);
 
-        connect(m_reader, &ConversationReader::renderProgressChanged, this, [this](int done_messages, int total_messages) {
-            m_render_progress->setMaximum(total_messages);
-            m_render_progress->setValue(done_messages);
-            m_render_progress->show();
+        // Reader: streaming a large conversation reports determinate progress.
+        connect(m_reader, &ConversationReader::renderProgressChanged, this, [this](int done, int total) {
+            showDeterminateProgress(done, total, QString());
         });
-        connect(m_reader, &ConversationReader::renderFinished, this, [this]() {
-            m_render_progress->hide();
+        connect(m_reader, &ConversationReader::renderFinished, this, &MainWindow::hideProgress);
+
+        // Search: the query runs off the UI thread. Only show a busy indicator if the query
+        // is still running after a short delay, so quick searches do not flicker the bar.
+        m_search_busy_timer = new QTimer(this);
+        m_search_busy_timer->setSingleShot(true);
+        m_search_busy_timer->setInterval(SEARCH_BUSY_DELAY_MS);
+        connect(m_search_busy_timer, &QTimer::timeout, this, [this]() {
+            showBusyProgress("Searching…");
+        });
+        connect(m_conversation_model, &ConversationListModel::searchStarted, this, [this]() {
+            m_search_busy_timer->start();
+        });
+        connect(m_conversation_model, &ConversationListModel::searchFinished, this, [this]() {
+            m_search_busy_timer->stop();
+            hideProgress();
         });
 
         setupMenus();
@@ -217,6 +231,9 @@ namespace ChatsBrowser
         worker->moveToThread(&m_import_thread);
         connect(&m_import_thread, &QThread::finished, worker, &QObject::deleteLater);
         connect(this, &MainWindow::importRequested, worker, &ImportWorker::importExport);
+        connect(worker, &ImportWorker::progressPhase, this, [this](const QString& message) {
+            showBusyProgress(message);
+        });
         connect(worker, &ImportWorker::progressChanged, this, &MainWindow::onImportProgress);
         connect(worker, &ImportWorker::finished, this, &MainWindow::onImportFinished);
         connect(worker, &ImportWorker::failed, this, &MainWindow::onImportFailed);
@@ -230,18 +247,19 @@ namespace ChatsBrowser
             return;
         }
         m_import_action->setEnabled(false);
-        statusBar()->showMessage("Importing…");
+        showBusyProgress("Importing…");
         emit importRequested(export_dir);
     }
 
     void MainWindow::onImportProgress(int done_conversations, int total_conversations)
     {
-        statusBar()->showMessage(QString("Importing… %1 / %2 conversations").arg(done_conversations).arg(total_conversations));
+        showDeterminateProgress(done_conversations, total_conversations, QString("Importing… %1 / %2 conversations").arg(done_conversations).arg(total_conversations));
     }
 
     void MainWindow::onImportFinished(int imported_conversations, int skipped_conversations, int imported_messages)
     {
         m_import_action->setEnabled(true);
+        hideProgress();
         m_conversation_model->refresh();
         updateTotalsStatus();
         statusBar()->showMessage(QString("Import complete: %1 conversations (%2 messages) imported, %3 skipped")
@@ -254,8 +272,34 @@ namespace ChatsBrowser
     void MainWindow::onImportFailed(const QString& error_message)
     {
         m_import_action->setEnabled(true);
-        statusBar()->clearMessage();
+        hideProgress();
         QMessageBox::warning(this, "Import failed", error_message);
+    }
+
+    void MainWindow::showBusyProgress(const QString& message)
+    {
+        if (!message.isEmpty()) {
+            statusBar()->showMessage(message);
+        }
+        m_progress_bar->setRange(0, 0); // indeterminate "busy" sweep
+        m_progress_bar->show();
+    }
+
+    void MainWindow::showDeterminateProgress(int done, int total, const QString& message)
+    {
+        if (!message.isEmpty()) {
+            statusBar()->showMessage(message);
+        }
+        m_progress_bar->setRange(0, qMax(total, 1));
+        m_progress_bar->setValue(done);
+        m_progress_bar->show();
+    }
+
+    void MainWindow::hideProgress()
+    {
+        m_progress_bar->hide();
+        m_progress_bar->setRange(0, 100); // leave determinate so the next busy use re-arms it
+        statusBar()->clearMessage();
     }
 
     void MainWindow::onConversationSelected(const QModelIndex& current, const QModelIndex& previous)
