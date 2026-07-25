@@ -15,15 +15,22 @@
 #include "message_widget.hpp"
 #include "code_highlighter.hpp"
 #include "collapsible_section.hpp"
+#include "icon_util.hpp"
+#include <QClipboard>
+#include <QColor>
+#include <QDateTime>
 #include <QFont>
 #include <QFontMetrics>
 #include <QFrame>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonValue>
 #include <QLabel>
 #include <QPlainTextEdit>
+#include <QSet>
+#include <QStringList>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -34,11 +41,16 @@ namespace ChatsBrowser
     {
         QString sender = message.value("sender").toString();
 
+        // Paint our own background so a find highlight (a class-selector background rule)
+        // is actually rendered; without this the widget stays transparent.
+        setAttribute(Qt::WA_StyledBackground, true);
+
         QVBoxLayout* layout = new QVBoxLayout(this);
         layout->setContentsMargins(12, 10, 12, 10);
         layout->setSpacing(6);
 
-        addHeader(layout, sender, branch_index, branch_count);
+        addHeader(layout, sender, message.value("created_at").toString(), branch_index, branch_count);
+        addAttachments(layout, message);
 
         // Render content blocks in their original order. Consecutive text blocks are
         // merged into one markdown label; thinking and tool blocks each become a
@@ -60,6 +72,7 @@ namespace ChatsBrowser
         // only as a fallback for older messages that carry no content blocks at all.
         if (content_blocks.isEmpty()) {
             pending_text = message.value("text").toString();
+            m_message_text = pending_text;
         }
 
         for (const QJsonValue& block_value : content_blocks) {
@@ -73,6 +86,10 @@ namespace ChatsBrowser
                         pending_text += "\n\n";
                     }
                     pending_text += block_text;
+                    if (!m_message_text.isEmpty()) {
+                        m_message_text += "\n\n";
+                    }
+                    m_message_text += block_text;
                 }
             } else if (type == "thinking") {
                 flush_text();
@@ -113,6 +130,11 @@ namespace ChatsBrowser
         }
 
         flush_text();
+
+        // A message that is only tool calls / thinking has nothing to copy.
+        if (m_message_text.trimmed().isEmpty() && (m_copy_button != nullptr)) {
+            m_copy_button->hide();
+        }
     }
 
     bool MessageWidget::hasRenderedContent() const
@@ -120,7 +142,34 @@ namespace ChatsBrowser
         return m_has_content;
     }
 
-    void MessageWidget::addHeader(QVBoxLayout* layout, const QString& sender, int branch_index, int branch_count)
+    QString MessageWidget::searchableText() const
+    {
+        return m_message_text;
+    }
+
+    void MessageWidget::setSearchHighlight(SearchHighlight state)
+    {
+        if (state == m_search_highlight) {
+            return;
+        }
+        m_search_highlight = state;
+
+        // Scope the rule to our own type so the tint lands on the message frame only and
+        // never cascades into the child labels/code editors.
+        switch (state) {
+        case SearchHighlight::None:
+            setStyleSheet(QString());
+            break;
+        case SearchHighlight::Match:
+            setStyleSheet("ChatsBrowser--MessageWidget { background-color: #2E2A1E; }");
+            break;
+        case SearchHighlight::Current:
+            setStyleSheet("ChatsBrowser--MessageWidget { background-color: #4A3A1E; }");
+            break;
+        }
+    }
+
+    void MessageWidget::addHeader(QVBoxLayout* layout, const QString& sender, const QString& created_at, int branch_index, int branch_count)
     {
         QWidget* header_row = new QWidget(this);
         QHBoxLayout* header_layout = new QHBoxLayout(header_row);
@@ -130,6 +179,13 @@ namespace ChatsBrowser
         QLabel* sender_label = new QLabel(senderLabel(sender), header_row);
         sender_label->setObjectName(sender == "human" ? "senderHuman" : "senderAssistant");
         header_layout->addWidget(sender_label);
+
+        const QString timestamp = formatTimestamp(created_at);
+        if (!timestamp.isEmpty()) {
+            QLabel* time_label = new QLabel(timestamp, header_row);
+            time_label->setObjectName("messageTime");
+            header_layout->addWidget(time_label);
+        }
 
         // A fork: this message is one of several sibling branches (an edit or a retry).
         // Offer claude.ai-style "< k / n >" navigation between them.
@@ -159,7 +215,75 @@ namespace ChatsBrowser
         }
 
         header_layout->addStretch();
+
+        m_copy_button = new QToolButton(header_row);
+        m_copy_button->setObjectName("copyButton");
+        m_copy_button->setIcon(IconUtil::tinted(":/icons/copy.svg", QColor("#858585")));
+        m_copy_button->setToolTip("Copy message");
+        m_copy_button->setCursor(Qt::PointingHandCursor);
+        connect(m_copy_button, &QToolButton::clicked, this, [this]() {
+            QGuiApplication::clipboard()->setText(m_message_text);
+        });
+        header_layout->addWidget(m_copy_button);
+
         layout->addWidget(header_row);
+    }
+
+    void MessageWidget::addAttachments(QVBoxLayout* layout, const QJsonObject& message)
+    {
+        // Pasted-text attachments carry their extracted content inline in the export.
+        QSet<QString> attachment_names;
+        const QJsonArray attachments = message.value("attachments").toArray();
+        for (const QJsonValue& value : attachments) {
+            const QJsonObject attachment = value.toObject();
+            const QString name = attachment.value("file_name").toString();
+            attachment_names.insert(name);
+            const QString content = attachment.value("extracted_content").toString();
+            if (content.trimmed().isEmpty()) {
+                continue;
+            }
+            addCollapsible(
+                layout, QString("Attachment · %1").arg(name.isEmpty() ? QString("file") : name),
+                [content]() {
+                    return content;
+                },
+                true);
+            m_has_content = true;
+        }
+
+        // File references carry no binary in the export — show a placeholder chip. Skip
+        // files already shown above as text attachments (an item can appear in both arrays).
+        const QJsonArray files = message.value("files").toArray();
+        for (const QJsonValue& value : files) {
+            const QString name = value.toObject().value("file_name").toString();
+            if (attachment_names.contains(name)) {
+                continue;
+            }
+            static const QStringList image_extensions = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg"};
+            bool is_image = false;
+            for (const QString& extension : image_extensions) {
+                if (name.endsWith(extension, Qt::CaseInsensitive)) {
+                    is_image = true;
+                    break;
+                }
+            }
+            const QString kind = is_image ? QString("image") : QString("file");
+            QLabel* chip = new QLabel(QString("%1  %2  (%3 not included in the export)").arg(is_image ? "🖼" : "📎", name.isEmpty() ? kind : name, kind), this);
+            chip->setObjectName("attachmentFile");
+            chip->setWordWrap(true);
+            layout->addWidget(chip);
+            m_has_content = true;
+        }
+    }
+
+    QString MessageWidget::formatTimestamp(const QString& iso_timestamp)
+    {
+        // "2026-07-18T15:08:39.970934Z" -> "2026-07-18 15:08" in local time.
+        const QDateTime moment = QDateTime::fromString(iso_timestamp, Qt::ISODateWithMs);
+        if (!moment.isValid()) {
+            return QString();
+        }
+        return moment.toLocalTime().toString("yyyy-MM-dd HH:mm");
     }
 
     void MessageWidget::addRichText(QVBoxLayout* layout, const QString& markdown)
@@ -208,7 +332,28 @@ namespace ChatsBrowser
 
     void MessageWidget::addCodeBlock(QVBoxLayout* layout, const QString& code)
     {
-        QPlainTextEdit* editor = new QPlainTextEdit(this);
+        QWidget* container = new QWidget(this);
+        QVBoxLayout* container_layout = new QVBoxLayout(container);
+        container_layout->setContentsMargins(0, 0, 0, 0);
+        container_layout->setSpacing(0);
+
+        // A thin bar with a right-aligned copy button above the code.
+        QWidget* bar = new QWidget(container);
+        QHBoxLayout* bar_layout = new QHBoxLayout(bar);
+        bar_layout->setContentsMargins(0, 0, 0, 0);
+        bar_layout->addStretch();
+        QToolButton* copy = new QToolButton(bar);
+        copy->setObjectName("copyButton");
+        copy->setIcon(IconUtil::tinted(":/icons/copy.svg", QColor("#858585")));
+        copy->setToolTip("Copy code");
+        copy->setCursor(Qt::PointingHandCursor);
+        connect(copy, &QToolButton::clicked, this, [code]() {
+            QGuiApplication::clipboard()->setText(code);
+        });
+        bar_layout->addWidget(copy);
+        container_layout->addWidget(bar);
+
+        QPlainTextEdit* editor = new QPlainTextEdit(container);
         editor->setObjectName("codeBlock");
         editor->setReadOnly(true);
         editor->setFrameShape(QFrame::NoFrame);
@@ -231,8 +376,9 @@ namespace ChatsBrowser
         const QFontMetrics metrics(mono);
         const int line_count = qMax(1, editor->document()->blockCount());
         editor->setFixedHeight((line_count * metrics.lineSpacing()) + (2 * 8) + 14);
+        container_layout->addWidget(editor);
 
-        layout->addWidget(editor);
+        layout->addWidget(container);
     }
 
     void MessageWidget::addMarkdownLabel(QVBoxLayout* layout, const QString& markdown, const char* object_name)
