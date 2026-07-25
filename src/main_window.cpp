@@ -14,6 +14,7 @@
 
 #include "main_window.hpp"
 #include "ui_main_window.h"
+#include "artifacts_panel.hpp"
 #include "conversation_list_model.hpp"
 #include "conversation_reader.hpp"
 #include "database.hpp"
@@ -40,6 +41,7 @@
 #include <QStatusBar>
 #include <QTabBar>
 #include <QTimer>
+#include <QToolButton>
 #include <QVariant>
 #include <QVBoxLayout>
 
@@ -193,9 +195,27 @@ namespace ChatsBrowser
         connect(m_tabs, &QTabBar::currentChanged, this, &MainWindow::onTabChanged);
         connect(m_tabs, &QTabBar::tabCloseRequested, this, &MainWindow::onTabCloseRequested);
 
-        m_breadcrumb = new QLabel(editor_area);
+        // Breadcrumb row: the path on the left, an Artifacts button on the right.
+        QWidget* breadcrumb_row = new QWidget(editor_area);
+        breadcrumb_row->setObjectName("breadcrumbRow");
+        QHBoxLayout* breadcrumb_layout = new QHBoxLayout(breadcrumb_row);
+        breadcrumb_layout->setContentsMargins(0, 0, 0, 0);
+        breadcrumb_layout->setSpacing(0);
+
+        m_breadcrumb = new QLabel(breadcrumb_row);
         m_breadcrumb->setObjectName("breadcrumb");
         m_breadcrumb->setText(" ");
+
+        m_artifacts_button = new QToolButton(breadcrumb_row);
+        m_artifacts_button->setObjectName("artifactsButton");
+        m_artifacts_button->setText("Artifacts");
+        m_artifacts_button->setToolTip("Show this conversation's artifacts");
+        m_artifacts_button->setCursor(Qt::PointingHandCursor);
+        m_artifacts_button->setEnabled(false);
+        connect(m_artifacts_button, &QToolButton::clicked, this, &MainWindow::openArtifactsPanel);
+
+        breadcrumb_layout->addWidget(m_breadcrumb, 1);
+        breadcrumb_layout->addWidget(m_artifacts_button);
 
         m_find_bar = new FindBar(editor_area);
         m_find_bar->hide();
@@ -206,7 +226,7 @@ namespace ChatsBrowser
         editor_layout->setContentsMargins(0, 0, 0, 0);
         editor_layout->setSpacing(0);
         editor_layout->addWidget(m_tabs);
-        editor_layout->addWidget(m_breadcrumb);
+        editor_layout->addWidget(breadcrumb_row);
         editor_layout->addWidget(m_find_bar);
         editor_layout->addWidget(m_reader, 1);
 
@@ -391,12 +411,47 @@ namespace ChatsBrowser
             m_reader->clearConversation();
             updateBreadcrumb(QString());
             updateConversationStatus(QString());
+            updateArtifactsButton(QString());
             return;
         }
         QString uuid = m_tabs->tabData(index).toString();
         m_reader->showConversation(uuid);
         updateBreadcrumb(uuid);
         updateConversationStatus(uuid);
+        updateArtifactsButton(uuid);
+    }
+
+    void MainWindow::updateArtifactsButton(const QString& uuid)
+    {
+        if (uuid.isEmpty()) {
+            m_artifacts_button->setEnabled(false);
+            m_artifacts_button->setText("Artifacts");
+            return;
+        }
+
+        // Cheap existence + op count via LIKE; the exact artifact list is rebuilt only when
+        // the panel is opened. Compact JSON in the store has no spaces after colons.
+        QSqlQuery query(QSqlDatabase::database("main"));
+        query.prepare("SELECT COUNT(*) FROM messages WHERE conversation_uuid = ? AND raw_json LIKE '%\"name\":\"artifacts\"%'");
+        query.addBindValue(uuid);
+        int op_messages = 0;
+        if (query.exec() && query.next()) {
+            op_messages = query.value(0).toInt();
+        }
+        m_artifacts_button->setEnabled(op_messages > 0);
+        m_artifacts_button->setText(op_messages > 0 ? "Artifacts ●" : "Artifacts");
+    }
+
+    void MainWindow::openArtifactsPanel()
+    {
+        const int index = m_tabs->currentIndex();
+        if (index < 0) {
+            return;
+        }
+        const QString uuid = m_tabs->tabData(index).toString();
+        const QString title = m_tabs->tabText(index);
+        ArtifactsPanel* panel = new ArtifactsPanel(uuid, title, this);
+        panel->show();
     }
 
     void MainWindow::onTabCloseRequested(int index)
