@@ -36,6 +36,13 @@ namespace ChatsBrowser
         Q_OBJECT
 
     public:
+        //! How this message is emphasised by an in-conversation find.
+        enum class SearchHighlight {
+            None, //!< Not a match.
+            Match, //!< A match, but not the one currently focused.
+            Current //!< The match the find bar is currently sitting on.
+        };
+
         /*!
             \param message The message object as stored in the export (its raw JSON).
             \param branch_index Zero-based position of this message among its siblings.
@@ -45,6 +52,12 @@ namespace ChatsBrowser
 
         //! True if the message produced any visible content (text, thinking, or a tool block).
         [[nodiscard]] bool hasRenderedContent() const;
+
+        //! The message's visible text, used to match in-conversation finds.
+        [[nodiscard]] QString searchableText() const;
+
+        //! Tints the whole message to mark it as a find match (see SearchHighlight).
+        void setSearchHighlight(SearchHighlight state);
 
     signals:
         //! Emitted when the user asks for the previous sibling branch at this fork.
@@ -83,5 +96,6 @@ namespace ChatsBrowser
         bool m_has_content{false};
         QString m_message_text; //!< The message's visible text, for the copy-message button.
         QToolButton* m_copy_button{nullptr}; //!< Header copy button; hidden for text-less messages.
+        SearchHighlight m_search_highlight{SearchHighlight::None}; //!< Current find emphasis.
     };
 }

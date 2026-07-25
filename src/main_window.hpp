@@ -31,12 +31,14 @@ class QModelIndex;
 class QProgressBar;
 class QTabBar;
 class QTimer;
+class QToolButton;
 QT_END_NAMESPACE
 
 namespace ChatsBrowser
 {
     class ConversationListModel;
     class ConversationReader;
+    class FindBar;
 
     //! Application main window: VS Code-style shell around the conversation browser and reader.
     class MainWindow : public QMainWindow {
@@ -69,6 +71,20 @@ namespace ChatsBrowser
         //! Opens (or re-activates) a tab for the given conversation and shows it.
         void openConversationTab(const QString& uuid, const QString& title, bool has_content);
 
+        //! Reveals the in-conversation find bar (or focuses the sidebar search if no
+        //! conversation is open) and re-runs any current query.
+        void showFindBar();
+
+        //! Hides the find bar and clears the reader's highlights.
+        void hideFindBar();
+
+        //! Enables the Artifacts button and labels it with the artifact count for the
+        //! conversation (disabled when it has none).
+        void updateArtifactsButton(const QString& uuid);
+
+        //! Opens the artifacts window for the current conversation.
+        void openArtifactsPanel();
+
         //! Refreshes the breadcrumb bar for the given conversation (empty clears it).
         void updateBreadcrumb(const QString& uuid);
 
@@ -90,10 +106,12 @@ namespace ChatsBrowser
         std::unique_ptr<Ui::MainWindow> m_ui; //!< Designer-generated form.
         ConversationListModel* m_conversation_model{nullptr}; //!< Sidebar model (owned by this window).
         ConversationReader* m_reader{nullptr}; //!< Right-pane reader for the current tab.
+        FindBar* m_find_bar{nullptr}; //!< In-conversation find strip below the breadcrumb.
         QLineEdit* m_search_edit{nullptr}; //!< Search-as-you-type box in the sidebar.
         QListView* m_conversation_view{nullptr}; //!< Sidebar conversation list.
         QTabBar* m_tabs{nullptr}; //!< Open-conversation tabs above the reader.
         QLabel* m_breadcrumb{nullptr}; //!< Path bar below the tabs.
+        QToolButton* m_artifacts_button{nullptr}; //!< Opens the artifacts window; disabled when none.
         QLabel* m_status_totals{nullptr}; //!< Left status-bar segment: total conversation count.
         QLabel* m_status_conversation{nullptr}; //!< Right status-bar segment: current conversation info.
         QProgressBar* m_progress_bar{nullptr}; //!< Shared status-bar progress/busy indicator (render, import, search).

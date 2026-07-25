@@ -252,6 +252,121 @@ QToolButton#copyButton:hover {
     border-radius: 3px;
 }
 
+/* In-conversation find bar (below the breadcrumb) */
+
+#findBar {
+    background-color: #252526;
+    border-bottom: 1px solid #2D2D2D;
+}
+
+#findInput {
+    margin: 0;
+}
+
+#findCount {
+    color: #858585;
+    font-size: 8pt;
+    padding: 0 4px;
+}
+
+QToolButton#findNav {
+    color: #A9A9A9;
+    background: transparent;
+    border: none;
+    font-size: 12pt;
+    padding: 0 6px;
+}
+
+QToolButton#findNav:hover {
+    color: #CE9178;
+}
+
+/* Artifacts button (breadcrumb row) + artifacts window */
+
+QToolButton#artifactsButton {
+    color: #A9A9A9;
+    background: transparent;
+    border: none;
+    padding: 2px 12px;
+    font-size: 8pt;
+}
+
+QToolButton#artifactsButton:enabled {
+    color: #E0A96D;
+}
+
+QToolButton#artifactsButton:hover:enabled {
+    color: #FFFFFF;
+}
+
+QToolButton#artifactsButton:disabled {
+    color: #5A5A5A;
+}
+
+#artifactsPanel {
+    background-color: #1E1E1E;
+}
+
+#artifactList {
+    background-color: #252526;
+    border: none;
+    outline: none;
+}
+
+#artifactList::item {
+    padding: 6px 10px;
+}
+
+#artifactList::item:selected {
+    background-color: #5A3E1E;
+    color: #FFFFFF;
+}
+
+#artifactTitle {
+    color: #FFFFFF;
+    font-size: 11pt;
+    font-weight: bold;
+}
+
+#artifactMeta {
+    color: #858585;
+    font-size: 8pt;
+}
+
+QToolButton#artifactAction {
+    color: #CCCCCC;
+    background-color: #3C3C3C;
+    border: 1px solid #3C3C3C;
+    border-radius: 3px;
+    padding: 4px 10px;
+}
+
+QToolButton#artifactAction:hover {
+    background-color: #4A4A4A;
+}
+
+#artifactRich {
+    background-color: #1E1E1E;
+    color: #D4D4D4;
+    border: 1px solid #2D2D2D;
+    border-radius: 4px;
+    padding: 8px;
+}
+
+QPlainTextEdit#artifactSource {
+    background-color: #1A1A1A;
+    color: #D4D4D4;
+    border: 1px solid #2D2D2D;
+    border-radius: 4px;
+    selection-background-color: #264F78;
+}
+
+#artifactSvgArea {
+    background-color: #2A2A2A;
+    border: 1px solid #2D2D2D;
+    border-radius: 4px;
+}
+
 QPlainTextEdit#codeBlock {
     background-color: #1A1A1A;
     color: #D4D4D4;
