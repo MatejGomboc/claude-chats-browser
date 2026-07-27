@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Package metadata for the application component.
+
+    @VERSION@ and @RELEASE_DATE@ are substituted by tools/build_installer.py.
+-->
+<Package>
+    <DisplayName>Claude Chats Browser</DisplayName>
+    <Description>Browse, search and read claude.ai data exports offline.</Description>
+    <Version>@VERSION@</Version>
+    <ReleaseDate>@RELEASE_DATE@</ReleaseDate>
+    <Licenses>
+        <License name="GNU General Public License v3" file="LICENCE" />
+    </Licenses>
+    <Default>true</Default>
+    <ForcedInstallation>true</ForcedInstallation>
+    <Script>installscript.qs</Script>
+</Package>

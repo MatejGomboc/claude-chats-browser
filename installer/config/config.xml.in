@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Qt Installer Framework configuration for the Windows installer.
+
+    @VERSION@ is substituted by tools/build_installer.py from the CMake project
+    version, so the installer version can never drift from the application's.
+-->
+<Installer>
+    <Name>Claude Chats Browser</Name>
+    <Version>@VERSION@</Version>
+    <Title>Claude Chats Browser Installer</Title>
+    <Publisher>Matej Gomboc</Publisher>
+    <ProductUrl>https://github.com/MatejGomboc/claude-chats-browser</ProductUrl>
+    <TargetDir>@ApplicationsDirX64@/Claude Chats Browser</TargetDir>
+    <StartMenuDir>Claude Chats Browser</StartMenuDir>
+    <!-- The deployed tree keeps Qt's bin/plugins/translations layout. -->
+    <RunProgram>@TargetDir@/bin/claude-chats-browser.exe</RunProgram>
+    <RunProgramDescription>Launch Claude Chats Browser</RunProgramDescription>
+    <WizardStyle>Modern</WizardStyle>
+</Installer>

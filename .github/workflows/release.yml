@@ -161,6 +161,29 @@ jobs:
                 cd dist
                 7z a -tzip ../${{ matrix.artifact }}.zip *
 
+            # A proper Windows installer alongside the plain zip: QtIFW's
+            # binarycreator over the same deployed tree, driven by the same
+            # script a developer runs locally (tools/build_installer.py).
+            - name: Install Qt Installer Framework (Windows)
+              if: runner.os == 'Windows'
+              shell: bash
+              run: |
+                pipx run --spec "git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b" aqt install-tool \
+                    windows desktop tools_ifw \
+                    --base https://download.qt.io/ \
+                    --outputdir "$HOME/Qt"
+
+            # build_installer.py finds binarycreator itself in ~/Qt/Tools, where
+            # the aqt install-tool step above put it (deliberately not
+            # configurable - see the script's docstring).
+            - name: Build installer (Windows)
+              if: runner.os == 'Windows'
+              shell: bash
+              run: |
+                python tools/build_installer.py \
+                    --deploy-dir build/${{ matrix.preset }}-deploy \
+                    --output ${{ matrix.artifact }}-setup.exe
+
             - name: Upload artifact (Unix)
               if: runner.os != 'Windows'
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -174,7 +197,9 @@ jobs:
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
               with:
                 name: ${{ matrix.artifact }}
-                path: ${{ matrix.artifact }}.zip
+                path: |
+                    ${{ matrix.artifact }}.zip
+                    ${{ matrix.artifact }}-setup.exe
                 retention-days: 1
 
     release:
@@ -199,8 +224,8 @@ jobs:
               shell: bash
               run: |
                 cd artifacts
-                find . -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec mv {} . \;
-                sha256sum *.tar.gz *.zip > SHA256SUMS.txt
+                find . -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*-setup.exe" \) -exec mv {} . \;
+                sha256sum *.tar.gz *.zip *-setup.exe > SHA256SUMS.txt
                 cat SHA256SUMS.txt
 
             - name: Attest build provenance
@@ -209,6 +234,7 @@ jobs:
                 subject-path: |
                     artifacts/*.tar.gz
                     artifacts/*.zip
+                    artifacts/*-setup.exe
 
             - name: Extract release notes from CHANGELOG
               id: release-notes
@@ -262,6 +288,7 @@ jobs:
                     $PRERELEASE_FLAG \
                     artifacts/*.tar.gz \
                     artifacts/*.zip \
+                    artifacts/*-setup.exe \
                     artifacts/SHA256SUMS.txt
 
                 echo "Release created: $TAG"
