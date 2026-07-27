@@ -22,3 +22,6 @@ __pycache__/
 # OS noise
 Thumbs.db
 Desktop.ini
+
+# aqtinstall drops a log file in the working directory
+aqtinstall.log
