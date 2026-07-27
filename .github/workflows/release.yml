@@ -236,6 +236,12 @@ jobs:
                 # linuxdeploy wants a rasterised icon; render it from the app SVG.
                 rsvg-convert -w 256 -h 256 resources/icons/chat.svg -o claude-chats-browser.png
 
+                # Only the SQLite driver is used; drop the other SQL driver
+                # plugins so the Qt deployer does not chase their client
+                # libraries (libmimerapi, libpq, ...), which the runner lacks.
+                find "$QTDIR/plugins/sqldrivers" -type f ! -name "libqsqlite.so" -delete
+                ls "$QTDIR/plugins/sqldrivers"
+
                 ./appimage-tools/linuxdeploy-x86_64.AppImage \
                     --appdir AppDir \
                     --executable build/${{ matrix.preset }}/claude-chats-browser \
