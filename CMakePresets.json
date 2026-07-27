@@ -145,7 +145,8 @@
             "displayName": "macOS Clang (Release)",
             "inherits": "macos-clang",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_OSX_ARCHITECTURES": "x86_64;arm64"
             }
         }
     ],

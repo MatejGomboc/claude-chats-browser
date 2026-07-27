@@ -93,6 +93,12 @@ list. Build them in that order.
 - CI Qt matches the dev machine (6.11.x); CMakeLists requires only 6.5+.
   Do not downgrade CI below 6.9: older Qt CMake exports reference the
   AGL framework, which modern macOS SDKs no longer ship (link failure).
+- Release artifacts: Windows zip + QtIFW setup.exe (bundled MSVC runtime,
+  installed silently), Linux AppImage (built on ubuntu-22.04 for an older
+  glibc baseline; linuxdeploy pinned by artifact SHA256 — the upstream only
+  has a "continuous" tag), macOS universal (x86_64+arm64) ad-hoc-signed
+  .app in a DMG. `release.yml` also has a workflow_dispatch **dry-run
+  mode**: builds and uploads all artifacts, publishes nothing.
 - GUI tests run under `xvfb-run` on Linux with `fonts-dejavu-core` installed
   (the offscreen QPA ships no fonts, which makes text layout pathologically
   slow — see the comment in CMakeLists.txt).

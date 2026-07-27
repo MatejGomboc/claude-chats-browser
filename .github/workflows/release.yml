@@ -11,6 +11,10 @@ on:
             - "v[0-9]+.[0-9]+.[0-9]+"
             - "v[0-9]+.[0-9]+.[0-9]+-*"
 
+    # Dry run: builds and uploads every artifact but publishes nothing.
+    # Use it to verify the packaging pipeline without cutting a release.
+    workflow_dispatch:
+
 env:
     QT_VERSION: "6.11.1"
 
@@ -23,6 +27,7 @@ jobs:
         outputs:
             version: ${{ steps.version.outputs.version }}
             tag: ${{ steps.version.outputs.tag }}
+            is-release: ${{ steps.version.outputs.is-release }}
 
         steps:
             - name: Checkout repository
@@ -32,21 +37,32 @@ jobs:
               id: version
               shell: bash
               run: |
-                TAG="${GITHUB_REF#refs/tags/}"
+                if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+                    TAG="${GITHUB_REF#refs/tags/}"
 
-                # Validate tag format
-                if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
-                    echo "Error: Invalid tag format: $TAG"
-                    echo "Expected format: v0.0.0 or v0.0.0-suffix"
-                    exit 1
+                    # Validate tag format
+                    if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
+                        echo "Error: Invalid tag format: $TAG"
+                        echo "Expected format: v0.0.0 or v0.0.0-suffix"
+                        exit 1
+                    fi
+
+                    VERSION="${TAG#v}"
+                    echo "is-release=true" >> "$GITHUB_OUTPUT"
+                else
+                    # workflow_dispatch dry run: build against the CMake version,
+                    # publish nothing.
+                    VERSION="$(grep -oP 'project\s*\(.*VERSION \K[0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt | head -1)-dryrun"
+                    TAG="(dry run)"
+                    echo "is-release=false" >> "$GITHUB_OUTPUT"
                 fi
 
-                VERSION="${TAG#v}"
                 echo "tag=$TAG" >> "$GITHUB_OUTPUT"
                 echo "version=$VERSION" >> "$GITHUB_OUTPUT"
                 echo "Release version: $VERSION (tag: $TAG)"
 
             - name: Verify CMakeLists.txt version matches tag
+              if: steps.version.outputs.is-release == 'true'
               shell: bash
               run: |
                 CMAKE_VERSION=$(grep 'VERSION ' CMakeLists.txt | head -1 | sed 's/.*VERSION \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
@@ -79,17 +95,20 @@ jobs:
                       preset: windows-msvc-release
                       msvc-setup-needed: true
                       artifact: claude-chats-browser-windows-x86_64
-                      archive: zip
 
-                    - os: ubuntu-latest
+                    # ubuntu-22.04 (not -latest): the AppImage inherits the build
+                    # machine's glibc as its minimum requirement, so building on
+                    # the older LTS keeps it runnable on more distros.
+                    - os: ubuntu-22.04
                       preset: linux-gcc-release
                       artifact: claude-chats-browser-linux-x86_64
-                      archive: tar.gz
 
+                    # Universal binary (x86_64 + arm64): aqt's macOS Qt ships
+                    # universal libraries, so one .dmg covers Intel and Apple
+                    # Silicon Macs.
                     - os: macos-latest
                       preset: macos-clang-release
-                      artifact: claude-chats-browser-macos-arm64
-                      archive: tar.gz
+                      artifact: claude-chats-browser-macos-universal
 
         runs-on: ${{ matrix.os }}
 
@@ -103,7 +122,7 @@ jobs:
                 sudo apt-get update && sudo apt-get install -y
                 libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0
                 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-cursor0
-                libxcb-xinerama0 libfontconfig1
+                libxcb-xinerama0 libfontconfig1 librsvg2-bin file
 
             - name: Setup Qt
               uses: ./.github/actions/setup-qt
@@ -134,24 +153,19 @@ jobs:
             - name: Build release binary
               run: cmake --build --preset ${{ matrix.preset }} --verbose
 
-            # The install step runs the Qt deploy script (windeployqt / macdeployqt),
-            # producing a self-contained directory on Windows and macOS. On Linux the
-            # deploy script is a no-op (unsupported platform), so the archive carries
-            # the bare binary and relies on distro Qt packages.
+            # The install step runs the Qt deploy script (windeployqt /
+            # macdeployqt), producing a self-contained tree on Windows and a
+            # self-contained .app bundle on macOS. Linux skips it: the AppImage
+            # tooling below bundles Qt itself from the build output.
             - name: Install and deploy
+              if: runner.os != 'Linux'
               run: cmake --install build/${{ matrix.preset }}
 
-            - name: Prepare artifact (Unix)
-              if: runner.os != 'Windows'
-              shell: bash
-              run: |
-                mkdir -p dist
-                cp -R build/${{ matrix.preset }}-deploy/* dist/
-                cp README.md LICENCE CHANGELOG.md dist/
-                cd dist
-                tar -czvf ../${{ matrix.artifact }}.tar.gz *
+            # ---------------------------------------------------------------- #
+            # Windows packaging: zip + QtIFW installer                          #
+            # ---------------------------------------------------------------- #
 
-            - name: Prepare artifact (Windows)
+            - name: Prepare zip (Windows)
               if: runner.os == 'Windows'
               shell: bash
               run: |
@@ -161,9 +175,6 @@ jobs:
                 cd dist
                 7z a -tzip ../${{ matrix.artifact }}.zip *
 
-            # A proper Windows installer alongside the plain zip: QtIFW's
-            # binarycreator over the same deployed tree, driven by the same
-            # script a developer runs locally (tools/build_installer.py).
             - name: Install Qt Installer Framework (Windows)
               if: runner.os == 'Windows'
               shell: bash
@@ -184,15 +195,7 @@ jobs:
                     --deploy-dir build/${{ matrix.preset }}-deploy \
                     --output ${{ matrix.artifact }}-setup.exe
 
-            - name: Upload artifact (Unix)
-              if: runner.os != 'Windows'
-              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-              with:
-                name: ${{ matrix.artifact }}
-                path: ${{ matrix.artifact }}.tar.gz
-                retention-days: 1
-
-            - name: Upload artifact (Windows)
+            - name: Upload artifacts (Windows)
               if: runner.os == 'Windows'
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
               with:
@@ -202,9 +205,99 @@ jobs:
                     ${{ matrix.artifact }}-setup.exe
                 retention-days: 1
 
+            # ---------------------------------------------------------------- #
+            # Linux packaging: AppImage (single self-contained executable)      #
+            # ---------------------------------------------------------------- #
+
+            # linuxdeploy only publishes a "continuous" tag, so the supply-chain
+            # pin is the artifact checksum itself: if upstream changes, the
+            # checksum fails and the hashes below are bumped consciously.
+            - name: Download linuxdeploy (Linux)
+              if: runner.os == 'Linux'
+              shell: bash
+              run: |
+                mkdir -p appimage-tools
+                cd appimage-tools
+                curl -sLO "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+                curl -sLO "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage"
+                printf '%s  %s\n' \
+                    "e87ee0815d109282fdda73e34c2361d64d02b0ffaea3674b18f1fd1f6a687dcf" "linuxdeploy-x86_64.AppImage" \
+                    "be1b7e166bf9975cfb694ebe6759ba40502ffc6196440d3e64aa90c4dbd67e9f" "linuxdeploy-plugin-qt-x86_64.AppImage" \
+                    | sha256sum -c
+                chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
+
+            - name: Build AppImage (Linux)
+              if: runner.os == 'Linux'
+              shell: bash
+              env:
+                # Runners have no FUSE; run the AppImage tools extracted.
+                APPIMAGE_EXTRACT_AND_RUN: "1"
+              run: |
+                # linuxdeploy wants a rasterised icon; render it from the app SVG.
+                rsvg-convert -w 256 -h 256 resources/icons/chat.svg -o claude-chats-browser.png
+
+                # Only the SQLite driver is used; drop the other SQL driver
+                # plugins so the Qt deployer does not chase their client
+                # libraries (libmimerapi, libpq, ...), which the runner lacks.
+                find "$QTDIR/plugins/sqldrivers" -type f ! -name "libqsqlite.so" -delete
+                ls "$QTDIR/plugins/sqldrivers"
+
+                ./appimage-tools/linuxdeploy-x86_64.AppImage \
+                    --appdir AppDir \
+                    --executable build/${{ matrix.preset }}/claude-chats-browser \
+                    --desktop-file packaging/linux/claude-chats-browser.desktop \
+                    --icon-file claude-chats-browser.png \
+                    --plugin qt \
+                    --output appimage
+
+                # The output name derives from the desktop entry; normalise it.
+                mv Claude*Chats*Browser*.AppImage ${{ matrix.artifact }}.AppImage
+                file ${{ matrix.artifact }}.AppImage
+
+            - name: Upload artifact (Linux)
+              if: runner.os == 'Linux'
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+              with:
+                name: ${{ matrix.artifact }}
+                path: ${{ matrix.artifact }}.AppImage
+                retention-days: 1
+
+            # ---------------------------------------------------------------- #
+            # macOS packaging: ad-hoc signed .app in a drag-to-install DMG      #
+            # ---------------------------------------------------------------- #
+
+            # Ad-hoc signing (identity "-") costs nothing and is required for
+            # arm64 binaries to run at all. Without notarisation (paid Apple
+            # Developer Program) users still right-click -> Open on first run.
+            - name: Sign app bundle (macOS)
+              if: runner.os == 'macOS'
+              run: codesign --force --deep --sign - "build/${{ matrix.preset }}-deploy/claude-chats-browser.app"
+
+            - name: Build DMG (macOS)
+              if: runner.os == 'macOS'
+              shell: bash
+              run: |
+                mkdir -p dmg-root
+                cp -R "build/${{ matrix.preset }}-deploy/claude-chats-browser.app" dmg-root/
+                ln -s /Applications dmg-root/Applications
+                hdiutil create -volname "Claude Chats Browser" \
+                    -srcfolder dmg-root -ov -format UDZO \
+                    ${{ matrix.artifact }}.dmg
+
+            - name: Upload artifact (macOS)
+              if: runner.os == 'macOS'
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+              with:
+                name: ${{ matrix.artifact }}
+                path: ${{ matrix.artifact }}.dmg
+                retention-days: 1
+
     release:
         name: Create Release
         needs: [validate, build]
+        # Dry runs (workflow_dispatch) stop here: artifacts are built and
+        # uploaded for inspection, but nothing is published.
+        if: needs.validate.outputs.is-release == 'true'
         runs-on: ubuntu-latest
         timeout-minutes: 10
 
@@ -224,17 +317,20 @@ jobs:
               shell: bash
               run: |
                 cd artifacts
-                find . -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*-setup.exe" \) -exec mv {} . \;
-                sha256sum *.tar.gz *.zip *-setup.exe > SHA256SUMS.txt
+                find . -type f \( -name "*.zip" -o -name "*-setup.exe" -o -name "*.AppImage" -o -name "*.dmg" \) -exec mv {} . \;
+                shopt -s nullglob
+                files=(*.zip *-setup.exe *.AppImage *.dmg)
+                sha256sum "${files[@]}" > SHA256SUMS.txt
                 cat SHA256SUMS.txt
 
             - name: Attest build provenance
               uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
               with:
                 subject-path: |
-                    artifacts/*.tar.gz
                     artifacts/*.zip
                     artifacts/*-setup.exe
+                    artifacts/*.AppImage
+                    artifacts/*.dmg
 
             - name: Extract release notes from CHANGELOG
               id: release-notes
@@ -281,14 +377,16 @@ jobs:
                 fi
 
                 # Create the release with gh CLI (more reliable than third-party actions)
+                shopt -s nullglob
                 gh release create "$TAG" \
                     --title "$TAG" \
                     --notes-file release_notes.md \
                     $LATEST_FLAG \
                     $PRERELEASE_FLAG \
-                    artifacts/*.tar.gz \
                     artifacts/*.zip \
                     artifacts/*-setup.exe \
+                    artifacts/*.AppImage \
+                    artifacts/*.dmg \
                     artifacts/SHA256SUMS.txt
 
                 echo "Release created: $TAG"

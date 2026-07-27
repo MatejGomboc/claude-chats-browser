@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Claude Chats Browser
+Comment=Browse, search and read claude.ai data exports offline
+Exec=claude-chats-browser
+Icon=claude-chats-browser
+Categories=Utility;
+Terminal=false
