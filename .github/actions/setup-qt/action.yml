@@ -7,9 +7,12 @@ inputs:
         description: Qt version (e.g. 6.8.3)
         required: true
     modules:
-        description: Space-separated list of extra Qt modules to install (beyond qtbase)
+        description: >
+            Space-separated list of extra Qt addon modules to install. The base
+            desktop install already bundles the default libraries (including
+            Qt SVG), so this is only needed for true addons like qtimageformats.
         required: false
-        default: qtsvg
+        default: ""
 
 runs:
     using: composite
@@ -70,10 +73,15 @@ runs:
           if: steps.check-qt.outputs.exists != 'true'
           shell: bash
           run: |
-            python3 -m pip install --user aqtinstall
-            python3 -m aqt install-qt \
+            # pipx run avoids PEP 668 (externally-managed-environment) failures on
+            # the macOS runners' Homebrew Python; pipx is preinstalled on all runners.
+            MODULE_ARGS=""
+            if [ -n "${{ inputs.modules }}" ]; then
+                MODULE_ARGS="--modules ${{ inputs.modules }}"
+            fi
+            pipx run --spec aqtinstall aqt install-qt \
                 "${{ steps.params.outputs.host }}" desktop "${{ inputs.version }}" "${{ steps.params.outputs.arch }}" \
-                --modules ${{ inputs.modules }} \
+                $MODULE_ARGS \
                 --outputdir "$HOME/Qt"
 
         - name: Setup environment
