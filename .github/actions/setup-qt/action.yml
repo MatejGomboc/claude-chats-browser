@@ -79,10 +79,15 @@ runs:
             if [ -n "${{ inputs.modules }}" ]; then
                 MODULE_ARGS="--modules ${{ inputs.modules }}"
             fi
+            # aqtinstall is pinned to the miurahr/aqtinstall commit that merged
+            # PR #1000 "Support Qt 6.11+ for Windows x64" (Qt changed the Windows
+            # repository layout in 6.11; the fix is not in any PyPI release yet).
+            # Switch back to the plain "aqtinstall" PyPI spec once a release
+            # newer than 3.3.0 ships.
             # --base pins the official server: third-party mirrors sometimes lag
             # behind on fresh Qt releases and fail metadata resolution. The cache
             # populated from main keeps CI off the network in the common case.
-            pipx run --spec aqtinstall aqt install-qt \
+            pipx run --spec "git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b" aqt install-qt \
                 "${{ steps.params.outputs.host }}" desktop "${{ inputs.version }}" "${{ steps.params.outputs.arch }}" \
                 $MODULE_ARGS \
                 --base https://download.qt.io/ \

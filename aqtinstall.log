@@ -1,0 +1,74 @@
+2026-07-27 19:10:10,683 - aqt.helper - DEBUG - helper 6012 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:10:11,183 - aqt.helper - DEBUG - helper 6012 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:10:11,674 - aqt.helper - DEBUG - helper 6012 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:10:12,195 - aqt.helper - DEBUG - helper 6012 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:10:12,707 - aqt.helper - DEBUG - helper 6012 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:10:13,255 - aqt.main - ERROR - installer 6012 Failed to download checksum for the file 'Updates.xml' from mirrors '['https://download.qt.io']
+==============================Suggested follow-up:==============================
+* Check your internet connection
+* Consider modifying `requests.max_retries_to_retrieve_hash` in settings.ini
+* Consider modifying `mirrors.trusted_mirrors` in settings.ini (see https://aqtinstall.readthedocs.io/en/stable/configuration.html#configuration)
+* Please use 'aqt list-qt windows desktop' to show versions of Qt available.
+2026-07-27 19:10:34,686 - aqt.helper - DEBUG - helper 20404 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:10:35,217 - aqt.helper - DEBUG - helper 20404 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:10:35,698 - aqt.helper - DEBUG - helper 20404 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:10:36,171 - aqt.helper - DEBUG - helper 20404 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:10:36,656 - aqt.helper - DEBUG - helper 20404 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:10:37,163 - aqt.main - ERROR - installer 20404 Failed to download checksum for the file 'Updates.xml' from mirrors '['https://download.qt.io']
+==============================Suggested follow-up:==============================
+* Check your internet connection
+* Consider modifying `requests.max_retries_to_retrieve_hash` in settings.ini
+* Consider modifying `mirrors.trusted_mirrors` in settings.ini (see https://aqtinstall.readthedocs.io/en/stable/configuration.html#configuration)
+* Please use 'aqt list-qt windows desktop' to show versions of Qt available.
+2026-07-27 19:12:07,450 - aqt.main - INFO - installer 3084 aqtinstall(aqt) v3.3.0 on Python 3.13.14 [CPython MSC v.1944 64 bit (AMD64)]
+2026-07-27 19:12:45,735 - aqt.main - INFO - installer 16744 aqtinstall(aqt) v3.3.0 on Python 3.13.14 [CPython MSC v.1944 64 bit (AMD64)]
+2026-07-27 19:12:45,736 - aqt.helper - DEBUG - helper 16744 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:12:46,248 - aqt.helper - DEBUG - helper 16744 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:12:46,761 - aqt.helper - DEBUG - helper 16744 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:12:47,266 - aqt.helper - DEBUG - helper 16744 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:12:47,773 - aqt.helper - DEBUG - helper 16744 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:12:48,264 - aqt.archives - WARNING - archives 16744 Failed to download checksum for the file 'online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml'. This may happen on unofficial mirrors.
+2026-07-27 19:12:48,783 - aqt.main - ERROR - installer 16744 Failed to locate XML data for Qt version '6.11.1'.
+==============================Suggested follow-up:==============================
+* Please use 'aqt list-qt windows desktop' to show versions available.
+2026-07-27 19:15:50,966 - aqt.main - INFO - installer 4636 aqtinstall(aqt) v3.3.1.dev92 on Python 3.13.14 [CPython MSC v.1944 64 bit (AMD64)]
+2026-07-27 19:15:50,966 - aqt.helper - DEBUG - helper 4636 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:15:51,490 - aqt.helper - DEBUG - helper 4636 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:15:51,985 - aqt.helper - DEBUG - helper 4636 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:15:52,503 - aqt.helper - DEBUG - helper 4636 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:15:53,001 - aqt.helper - DEBUG - helper 4636 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml.sha256
+2026-07-27 19:15:53,495 - aqt.archives - WARNING - archives 4636 Failed to download checksum for the file 'online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111/Updates.xml'. This may happen on unofficial mirrors.
+2026-07-27 19:15:54,142 - aqt.main - ERROR - installer 4636 Failed to locate XML data for Qt version '6.11.1'.
+==============================Suggested follow-up:==============================
+* Please use 'aqt list-qt windows desktop' to show versions available.
+2026-07-27 19:16:19,638 - aqt.main - INFO - installer 14036 aqtinstall(aqt) v3.3.1.dev92 on Python 3.13.14 [CPython MSC v.1944 64 bit (AMD64)]
+2026-07-27 19:16:19,639 - aqt.helper - DEBUG - helper 14036 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/Updates.xml.sha256
+2026-07-27 19:16:20,685 - aqt.helper - DEBUG - helper 14036 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/extensions/qtwebengine/6111/msvc2022_64/Updates.xml.sha256
+2026-07-27 19:16:21,667 - aqt.archives - INFO - archives 14036 Found extension qtwebengine
+2026-07-27 19:16:21,667 - aqt.helper - DEBUG - helper 14036 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/extensions/qtpdf/6111/msvc2022_64/Updates.xml.sha256
+2026-07-27 19:16:22,674 - aqt.archives - INFO - archives 14036 Found extension qtpdf
+2026-07-27 19:16:23,729 - aqt.helper - DEBUG - helper 20344 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtbase-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z.sha256
+2026-07-27 19:16:23,729 - aqt.helper - DEBUG - helper 1220 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtsvg-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z.sha256
+2026-07-27 19:16:23,744 - aqt.helper - DEBUG - helper 5812 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtdeclarative-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z.sha256
+2026-07-27 19:16:23,748 - aqt.helper - DEBUG - helper 9440 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtdoc-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z.sha256
+2026-07-27 19:16:24,383 - aqt.helper - INFO - helper 1220 Downloading qtsvg...
+2026-07-27 19:16:24,386 - aqt.helper - INFO - helper 20344 Downloading qtbase...
+2026-07-27 19:16:24,383 - aqt.installer - DEBUG - installer 1220 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtsvg-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z
+2026-07-27 19:16:24,386 - aqt.installer - DEBUG - installer 20344 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtbase-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z
+2026-07-27 19:16:24,392 - aqt.helper - INFO - helper 5812 Downloading qtdeclarative...
+2026-07-27 19:16:24,392 - aqt.installer - DEBUG - installer 5812 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtdeclarative-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z
+2026-07-27 19:16:24,409 - aqt.helper - INFO - helper 9440 Downloading qtdoc...
+2026-07-27 19:16:24,409 - aqt.installer - DEBUG - installer 9440 Download URL: https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtdoc-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z
+2026-07-27 19:16:24,994 - aqt.helper - DEBUG - helper 5812 Asked to redirect(302) to: https://ftp.fau.de/qtproject/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtdeclarative-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z
+2026-07-27 19:16:24,994 - aqt.helper - INFO - helper 5812 Redirected: ftp.fau.de
+2026-07-27 19:16:25,008 - aqt.helper - DEBUG - helper 20344 Asked to redirect(302) to: https://ftp.fau.de/qtproject/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtbase-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z
+2026-07-27 19:16:25,008 - aqt.helper - INFO - helper 20344 Redirected: ftp.fau.de
+2026-07-27 19:16:25,108 - aqt.helper - DEBUG - helper 9440 Asked to redirect(302) to: https://ftp.fau.de/qtproject/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtdoc-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z
+2026-07-27 19:16:25,108 - aqt.helper - INFO - helper 9440 Redirected: ftp.fau.de
+2026-07-27 19:16:25,111 - aqt.helper - DEBUG - helper 1220 Asked to redirect(302) to: https://ftp.fau.de/qtproject/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qtsvg-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z
+2026-07-27 19:16:25,111 - aqt.helper - INFO - helper 1220 Redirected: ftp.fau.de
+2026-07-27 19:16:27,330 - aqt.installer - INFO - installer 1220 Finished installation of qtsvg-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z in 3.60506580
+2026-07-27 19:16:27,347 - aqt.helper - DEBUG - helper 1220 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qttools-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z.sha256
+2026-07-27 19:16:27,859 - aqt.helper - INFO - helper 1220 Downloading qttools...
+2026-07-27 19:16:28,398 - aqt.helper - DEBUG - helper 1220 Asked to redirect(302) to: https://ftp.fau.de/qtproject/online/qtsdkrepository/windows_x86/desktop/qt6_6111/qt6_6111_msvc2022_64/qt.qt6.6111.win64_msvc2022_64/6.11.1-0-202605090529qttools-Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z
+2026-07-27 19:16:28,398 - aqt.helper - INFO - helper 1220 Redirected: ftp.fau.de
