@@ -21,6 +21,7 @@
 #include "find_bar.hpp"
 #include "icon_util.hpp"
 #include "import_worker.hpp"
+#include "stats_panel.hpp"
 #include <QAction>
 #include <QApplication>
 #include <QFileDialog>
@@ -265,6 +266,13 @@ namespace ChatsBrowser
         connect(focus_search_action, &QAction::triggered, this, [this]() {
             m_search_edit->setFocus();
             m_search_edit->selectAll();
+        });
+
+        view_menu->addSeparator();
+        QAction* stats_action = view_menu->addAction("S&tatistics");
+        connect(stats_action, &QAction::triggered, this, [this]() {
+            StatsPanel* panel = new StatsPanel(this);
+            panel->show();
         });
 
         QMenu* help_menu = menuBar()->addMenu("&Help");

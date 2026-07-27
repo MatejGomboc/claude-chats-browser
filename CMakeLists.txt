@@ -16,6 +16,8 @@ qt_add_executable(claude-chats-browser
     src/artifact_reconstructor.hpp
     src/artifacts_panel.cpp
     src/artifacts_panel.hpp
+    src/bar_chart.cpp
+    src/bar_chart.hpp
     src/code_highlighter.cpp
     src/code_highlighter.hpp
     src/collapsible_section.cpp
@@ -40,6 +42,10 @@ qt_add_executable(claude-chats-browser
     src/main_window.ui
     src/message_widget.cpp
     src/message_widget.hpp
+    src/stats_collector.cpp
+    src/stats_collector.hpp
+    src/stats_panel.cpp
+    src/stats_panel.hpp
 )
 
 qt_add_resources(claude-chats-browser "assets"
@@ -148,6 +154,29 @@ target_link_libraries(tst_artifact_reconstructor
 
 add_test(NAME artifact_reconstructor COMMAND tst_artifact_reconstructor)
 
+# The archive-statistics aggregation must count blocks, months and tools correctly.
+qt_add_executable(tst_stats_collector
+    tests/tst_stats_collector.cpp
+    src/stats_collector.cpp
+    src/stats_collector.hpp
+)
+
+target_include_directories(tst_stats_collector PRIVATE src)
+
+if(MSVC)
+    target_compile_options(tst_stats_collector PRIVATE /W4 /WX)
+else()
+    target_compile_options(tst_stats_collector PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
+
+target_link_libraries(tst_stats_collector
+    PRIVATE
+        Qt6::Core
+        Qt6::Test
+)
+
+add_test(NAME stats_collector COMMAND tst_stats_collector)
+
 # GUI test: opening a large conversation must stream in without freezing the UI.
 qt_add_executable(tst_reader_performance
     tests/tst_reader_performance.cpp
@@ -221,6 +250,9 @@ set_tests_properties(conversation_tree PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")
 
 set_tests_properties(artifact_reconstructor PROPERTIES
+    ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")
+
+set_tests_properties(stats_collector PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")
 
 # Runs on the real platform (the offscreen QPA ships no fonts, which makes text layout
