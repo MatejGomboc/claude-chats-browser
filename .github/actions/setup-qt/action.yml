@@ -88,6 +88,11 @@ runs:
           shell: bash
           run: |
             QT_PREFIX="$HOME/Qt/${{ inputs.version }}/${{ steps.params.outputs.dir }}"
+            # CMake on Windows cannot use the POSIX-style path git-bash produces
+            # for $HOME; convert to a mixed-style Windows path (C:/Users/...).
+            if [ "${{ runner.os }}" == "Windows" ]; then
+                QT_PREFIX=$(cygpath -m "$QT_PREFIX")
+            fi
             # CMakePresets.json points CMAKE_PREFIX_PATH at $env{QTDIR}.
             echo "QTDIR=$QT_PREFIX" >> "$GITHUB_ENV"
             echo "$QT_PREFIX/bin" >> "$GITHUB_PATH"

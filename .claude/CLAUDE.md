@@ -90,8 +90,9 @@ list. Build them in that order.
   action also uses `actions/cache` but is **not** covered. When a Dependabot
   PR bumps `actions/cache`, manually update the hash and version comment in
   the composite action to match.
-- The CI Qt (6.8.x LTS) intentionally trails the dev machine (6.11.x);
-  CMakeLists requires only 6.5+.
+- CI Qt matches the dev machine (6.11.x); CMakeLists requires only 6.5+.
+  Do not downgrade CI below 6.9: older Qt CMake exports reference the
+  AGL framework, which modern macOS SDKs no longer ship (link failure).
 - GUI tests run under `xvfb-run` on Linux with `fonts-dejavu-core` installed
   (the offscreen QPA ships no fonts, which makes text layout pathologically
   slow — see the comment in CMakeLists.txt).
