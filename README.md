@@ -1,5 +1,7 @@
 # claude-chats-browser
 
+[![CI - Main Branch](https://github.com/MatejGomboc/claude-chats-browser/actions/workflows/ci_main.yml/badge.svg)](https://github.com/MatejGomboc/claude-chats-browser/actions/workflows/ci_main.yml)
+
 **Your chats. Your machine. Actually readable.**
 
 A cross-platform desktop app (Qt 6 / C++20) for browsing, searching, and reading

@@ -1,0 +1,185 @@
+name: CI - Main Branch
+
+permissions:
+    contents: read
+    actions: write
+
+on:
+    push:
+        branches: [main]
+
+    workflow_dispatch:
+
+env:
+    QT_VERSION: "6.11.1"
+
+jobs:
+    quick-checks:
+        name: Quick Checks (clang-format, markdown)
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+            - name: Install clang-format
+              # Pinned to the same major version as the development machines so the
+              # check agrees with locally-formatted code.
+              run: python3 -m pip install --user "clang-format~=22.1"
+
+            - name: Check C++ formatting
+              run: find src tests -name "*.cpp" -o -name "*.hpp" | xargs clang-format --dry-run --Werror
+
+            - name: Setup Node.js
+              id: setup-node
+              uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+              with:
+                node-version: "lts/*"
+
+            - name: Get markdownlint-cli2 version
+              id: mdlint-version
+              run: echo "version=$(npm view markdownlint-cli2 version)" >> "$GITHUB_OUTPUT"
+
+            - name: Restore npm cache
+              id: npm-cache-restore
+              uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+              with:
+                path: ~/.npm
+                key: npm-markdownlint-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-mdlint-${{ steps.mdlint-version.outputs.version }}
+
+            - name: Install markdownlint-cli2
+              run: npm install -g markdownlint-cli2
+
+            - name: Lint markdown
+              run: markdownlint-cli2 "**/*.md"
+
+            - name: Save npm cache
+              if: steps.npm-cache-restore.outputs.cache-hit != 'true'
+              uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+              with:
+                path: ~/.npm
+                key: npm-markdownlint-${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-mdlint-${{ steps.mdlint-version.outputs.version }}
+
+    build:
+        name: Build (${{ matrix.preset }})
+        needs: quick-checks
+        timeout-minutes: 40
+
+        strategy:
+            fail-fast: false
+
+            matrix:
+                include:
+                    - preset: windows-msvc-debug
+                      os: windows-latest
+                      msvc-setup-needed: true
+                    - preset: linux-gcc-debug
+                      os: ubuntu-latest
+                    - preset: linux-clang-debug
+                      os: ubuntu-latest
+                    - preset: macos-clang-debug
+                      os: macos-latest
+
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+            - name: Install Qt runtime dependencies (Linux)
+              if: runner.os == 'Linux'
+              run: >
+                sudo apt-get update && sudo apt-get install -y
+                libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0
+                libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-cursor0
+                libxcb-xinerama0 libfontconfig1 xvfb fonts-dejavu-core
+
+            - name: Setup Qt
+              uses: ./.github/actions/setup-qt
+              with:
+                version: ${{ env.QT_VERSION }}
+
+            # Imports the vcvars64 environment directly (this repository's Actions
+            # policy only allows actions owned by MatejGomboc or GitHub, which rules
+            # out the usual ilammy/msvc-dev-cmd).
+            - name: Setup MSVC environment
+              if: matrix.msvc-setup-needed
+              shell: pwsh
+              run: |
+                $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+                $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+                cmd /c "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul 2>&1 && set" | ForEach-Object {
+                    if ($_ -match '^([^=]+)=(.*)$') {
+                        Add-Content $env:GITHUB_ENV "$($matches[1])=$($matches[2])"
+                    }
+                }
+
+            # The GUI tests need a display; xvfb provides one on headless Linux.
+            - name: Run CMake workflow (Linux)
+              if: runner.os == 'Linux'
+              run: xvfb-run -a cmake --workflow --preset=${{ matrix.preset }}
+
+            - name: Run CMake workflow
+              if: runner.os != 'Linux'
+              run: cmake --workflow --preset=${{ matrix.preset }}
+
+    sanitisers:
+        name: Sanitiser (ASan+UBSan)
+        needs: quick-checks
+        timeout-minutes: 40
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+            - name: Install Qt runtime dependencies
+              run: >
+                sudo apt-get update && sudo apt-get install -y
+                libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0
+                libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-cursor0
+                libxcb-xinerama0 libfontconfig1 xvfb fonts-dejavu-core
+
+            - name: Setup Qt
+              uses: ./.github/actions/setup-qt
+              with:
+                version: ${{ env.QT_VERSION }}
+
+            - name: Run CMake workflow
+              env:
+                # Leak detection off: the un-instrumented Qt/fontconfig/glib stack
+                # reports one-time allocations as leaks. ASan+UBSan still catch
+                # memory errors and UB in our own code.
+                ASAN_OPTIONS: "detect_leaks=0"
+              run: xvfb-run -a cmake --workflow --preset=linux-clang-asan
+
+    ci-success:
+        name: CI Success
+        needs: [quick-checks, build, sanitisers]
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        if: ${{ !cancelled() }}
+
+        steps:
+            - name: Check if all jobs succeeded
+              run: |
+                if [[ "${{ needs.quick-checks.result }}" != "success" ]] ||
+                   [[ "${{ needs.build.result }}" != "success" ]] ||
+                   [[ "${{ needs.sanitisers.result }}" != "success" ]]; then
+                    echo "One or more jobs failed"
+                    exit 1
+                fi
+                echo "All jobs completed successfully"
+
+            - name: Checkout repository
+              if: success()
+              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+            - name: Cleanup stale caches
+              if: success()
+              uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+              with:
+                script: |
+                    const cleanupScript = require('./.github/scripts/cleanup-caches.js');
+                    await cleanupScript({ github, context, core });
