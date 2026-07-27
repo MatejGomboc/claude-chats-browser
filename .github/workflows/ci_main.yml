@@ -100,9 +100,20 @@ jobs:
               with:
                 version: ${{ env.QT_VERSION }}
 
+            # Imports the vcvars64 environment directly (this repository's Actions
+            # policy only allows actions owned by MatejGomboc or GitHub, which rules
+            # out the usual ilammy/msvc-dev-cmd).
             - name: Setup MSVC environment
               if: matrix.msvc-setup-needed
-              uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+              shell: pwsh
+              run: |
+                $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+                $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+                cmd /c "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul 2>&1 && set" | ForEach-Object {
+                    if ($_ -match '^([^=]+)=(.*)$') {
+                        Add-Content $env:GITHUB_ENV "$($matches[1])=$($matches[2])"
+                    }
+                }
 
             # The GUI tests need a display; xvfb provides one on headless Linux.
             - name: Run CMake workflow (Linux)
