@@ -4,9 +4,11 @@ Qt 6 / C++ desktop app for browsing, searching and reading claude.ai
 data-export dumps offline. The raw export is a single huge JSON file that is
 unusable for humans; this app turns it into a fast, pleasant chat browser.
 
-**Status: scaffold stage.** A minimal Qt Widgets app builds (main window only);
-no features yet. The plan below is agreed — follow it unless Matej says
-otherwise. Obey `STYLE.md` in all code.
+**Status: usable.** Import (SQLite + FTS5), searchable sidebar, tabbed tree-aware
+reader (branches, markdown, syntax-highlighted code, thinking/tool sections,
+attachments, timestamps, copy buttons), in-conversation find (Ctrl+F), artifact
+reconstruction + viewer, and cross-platform CI. The plan below is agreed — follow
+it unless Matej says otherwise. Obey `STYLE.md` in all code.
 
 ## Off limits
 
@@ -72,6 +74,27 @@ otherwise. Obey `STYLE.md` in all code.
 
 Feature order (by value): see `README.md` § Planned Features — the canonical
 list. Build them in that order.
+
+## CI/CD Notes
+
+- Workflows follow the family convention shared with Matej's other repos
+  (git-proxy-mcp, altium-designer-mcp, tron_grid): `ci_pr` (PRs: caches are
+  restore-only), `ci_main` (pushes to main: caches save + stale-cache
+  cleanup), `release` (version tags), `cleanup_caches` (manual, dry-run
+  option). All third-party actions are pinned to full commit SHAs.
+- CI drives builds through **CMake workflow presets**
+  (`cmake --workflow --preset <name>`), so CI and local runs are identical.
+- Qt is installed by the custom composite action
+  `.github/actions/setup-qt/action.yml` (aqtinstall). **Dependabot** only
+  updates action references in `.github/workflows/*.yml`; the composite
+  action also uses `actions/cache` but is **not** covered. When a Dependabot
+  PR bumps `actions/cache`, manually update the hash and version comment in
+  the composite action to match.
+- The CI Qt (6.8.x LTS) intentionally trails the dev machine (6.11.x);
+  CMakeLists requires only 6.5+.
+- GUI tests run under `xvfb-run` on Linux with `fonts-dejavu-core` installed
+  (the offscreen QPA ships no fonts, which makes text layout pathologically
+  slow — see the comment in CMakeLists.txt).
 
 ## Tools
 

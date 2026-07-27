@@ -1,0 +1,85 @@
+name: Setup Qt
+
+description: Downloads, caches, and configures the Qt SDK on the runner via aqtinstall.
+
+inputs:
+    version:
+        description: Qt version (e.g. 6.8.3)
+        required: true
+    modules:
+        description: Space-separated list of extra Qt modules to install (beyond qtbase)
+        required: false
+        default: qtsvg
+
+runs:
+    using: composite
+
+    steps:
+        - name: Compute platform parameters
+          id: params
+          shell: bash
+          run: |
+            # aqtinstall host / arch / install-subdirectory triplets per runner OS.
+            # (Qt >= 6.7 renamed the Linux arch from gcc_64 to linux_gcc_64.)
+            case "${{ runner.os }}" in
+                Linux)
+                    echo "host=linux" >> "$GITHUB_OUTPUT"
+                    echo "arch=linux_gcc_64" >> "$GITHUB_OUTPUT"
+                    echo "dir=gcc_64" >> "$GITHUB_OUTPUT"
+                    ;;
+                Windows)
+                    echo "host=windows" >> "$GITHUB_OUTPUT"
+                    echo "arch=win64_msvc2022_64" >> "$GITHUB_OUTPUT"
+                    echo "dir=msvc2022_64" >> "$GITHUB_OUTPUT"
+                    ;;
+                macOS)
+                    echo "host=mac" >> "$GITHUB_OUTPUT"
+                    echo "arch=clang_64" >> "$GITHUB_OUTPUT"
+                    echo "dir=macos" >> "$GITHUB_OUTPUT"
+                    ;;
+            esac
+            hash=$(echo -n "${{ inputs.modules }}" | sha256sum | cut -c1-8)
+            echo "key=qt-${{ runner.os }}-${{ inputs.version }}-$hash" >> "$GITHUB_OUTPUT"
+
+        # On main: restore and save cache. On PRs: restore only (read-only).
+        - name: Restore Qt cache
+          if: github.ref != 'refs/heads/main'
+          uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+          with:
+            path: ~/Qt/${{ inputs.version }}
+            key: ${{ steps.params.outputs.key }}
+
+        - name: Restore and save Qt cache
+          if: github.ref == 'refs/heads/main'
+          uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+          with:
+            path: ~/Qt/${{ inputs.version }}
+            key: ${{ steps.params.outputs.key }}
+
+        - name: Check if Qt already exists
+          id: check-qt
+          shell: bash
+          run: |
+            if [ -d "$HOME/Qt/${{ inputs.version }}/${{ steps.params.outputs.dir }}" ]; then
+                echo "exists=true" >> "$GITHUB_OUTPUT"
+            else
+                echo "exists=false" >> "$GITHUB_OUTPUT"
+            fi
+
+        - name: Download and install Qt
+          if: steps.check-qt.outputs.exists != 'true'
+          shell: bash
+          run: |
+            python3 -m pip install --user aqtinstall
+            python3 -m aqt install-qt \
+                "${{ steps.params.outputs.host }}" desktop "${{ inputs.version }}" "${{ steps.params.outputs.arch }}" \
+                --modules ${{ inputs.modules }} \
+                --outputdir "$HOME/Qt"
+
+        - name: Setup environment
+          shell: bash
+          run: |
+            QT_PREFIX="$HOME/Qt/${{ inputs.version }}/${{ steps.params.outputs.dir }}"
+            # CMakePresets.json points CMAKE_PREFIX_PATH at $env{QTDIR}.
+            echo "QTDIR=$QT_PREFIX" >> "$GITHUB_ENV"
+            echo "$QT_PREFIX/bin" >> "$GITHUB_PATH"

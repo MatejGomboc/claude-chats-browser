@@ -1,8 +1,8 @@
 {
-    "version": 5,
+    "version": 6,
     "cmakeMinimumRequired": {
         "major": 3,
-        "minor": 24
+        "minor": 25
     },
     "configurePresets": [
         {
@@ -113,6 +113,16 @@
             }
         },
         {
+            "name": "linux-clang-asan",
+            "displayName": "Linux Clang (ASan+UBSan Debug)",
+            "inherits": "linux-clang",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined -fno-omit-frame-pointer",
+                "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address,undefined"
+            }
+        },
+        {
             "name": "macos-clang",
             "hidden": true,
             "inherits": "base",
@@ -171,6 +181,162 @@
         {
             "name": "macos-clang-release",
             "configurePreset": "macos-clang-release"
+        },
+        {
+            "name": "linux-clang-asan",
+            "configurePreset": "linux-clang-asan"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "windows-msvc-debug",
+            "configurePreset": "windows-msvc-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "windows-msvc-release",
+            "configurePreset": "windows-msvc-release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-gcc-debug",
+            "configurePreset": "linux-gcc-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-gcc-release",
+            "configurePreset": "linux-gcc-release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-clang-debug",
+            "configurePreset": "linux-clang-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-clang-release",
+            "configurePreset": "linux-clang-release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "macos-clang-debug",
+            "configurePreset": "macos-clang-debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "macos-clang-release",
+            "configurePreset": "macos-clang-release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-clang-asan",
+            "configurePreset": "linux-clang-asan",
+            "output": {
+                "outputOnFailure": true
+            }
+        }
+    ],
+    "workflowPresets": [
+        {
+            "name": "windows-msvc-debug",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "windows-msvc-debug"
+                },
+                {
+                    "type": "build",
+                    "name": "windows-msvc-debug"
+                },
+                {
+                    "type": "test",
+                    "name": "windows-msvc-debug"
+                }
+            ]
+        },
+        {
+            "name": "linux-gcc-debug",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "linux-gcc-debug"
+                },
+                {
+                    "type": "build",
+                    "name": "linux-gcc-debug"
+                },
+                {
+                    "type": "test",
+                    "name": "linux-gcc-debug"
+                }
+            ]
+        },
+        {
+            "name": "linux-clang-debug",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "linux-clang-debug"
+                },
+                {
+                    "type": "build",
+                    "name": "linux-clang-debug"
+                },
+                {
+                    "type": "test",
+                    "name": "linux-clang-debug"
+                }
+            ]
+        },
+        {
+            "name": "macos-clang-debug",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "macos-clang-debug"
+                },
+                {
+                    "type": "build",
+                    "name": "macos-clang-debug"
+                },
+                {
+                    "type": "test",
+                    "name": "macos-clang-debug"
+                }
+            ]
+        },
+        {
+            "name": "linux-clang-asan",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "linux-clang-asan"
+                },
+                {
+                    "type": "build",
+                    "name": "linux-clang-asan"
+                },
+                {
+                    "type": "test",
+                    "name": "linux-clang-asan"
+                }
+            ]
         }
     ]
 }
