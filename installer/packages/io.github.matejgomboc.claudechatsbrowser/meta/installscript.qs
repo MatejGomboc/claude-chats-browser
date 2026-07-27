@@ -28,6 +28,14 @@ Component.prototype.createOperations = function ()
     component.createOperations();
 
     if (systemInfo.productType === "windows") {
+        // Install the bundled MSVC C++ runtime silently so the app runs on
+        // machines without the VC redistributable. Accepted exit codes:
+        // 0 = installed, 1638 = a newer version is already installed,
+        // 3010 = installed, reboot required (the app still runs immediately).
+        component.addElevatedOperation(
+            "Execute", "{0,1638,3010}",
+            "@TargetDir@/bin/vc_redist.x64.exe", "/install", "/quiet", "/norestart");
+
         // The deployed tree keeps Qt's bin/plugins/translations layout.
         component.addOperation(
             "CreateShortcut",

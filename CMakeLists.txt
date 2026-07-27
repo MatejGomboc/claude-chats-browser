@@ -83,10 +83,19 @@ install(TARGETS claude-chats-browser
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+# --compiler-runtime bundles the MSVC C++ runtime DLLs so the deployed app
+# runs on machines without the VC redistributable (windeployqt-only option).
+if(WIN32)
+    set(deploy_tool_options DEPLOY_TOOL_OPTIONS --compiler-runtime)
+else()
+    set(deploy_tool_options "")
+endif()
+
 qt_generate_deploy_app_script(
     TARGET claude-chats-browser
     OUTPUT_SCRIPT deploy_script
     NO_UNSUPPORTED_PLATFORM_ERROR
+    ${deploy_tool_options}
 )
 install(SCRIPT ${deploy_script})
 
