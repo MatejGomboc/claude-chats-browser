@@ -19,6 +19,10 @@ The application version is read from CMakeLists.txt (the single source of
 truth, already enforced against release tags by the release workflow).
 binarycreator is located via --qtifw-bin, the QTIFW_BIN environment variable,
 or by scanning C:/Qt/Tools/QtInstallerFramework/*/bin.
+
+All directory and output arguments must resolve to paths inside the
+repository (the working tree this script lives in); the tool refuses
+anything else, so arguments can never write outside the checkout.
 """
 
 import argparse
@@ -30,22 +34,52 @@ import shutil
 import subprocess
 import sys
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO_ROOT = os.path.realpath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PACKAGE_ID = "io.github.matejgomboc.claudechatsbrowser"
+
+# Only version lines of exactly this shape are accepted; the pattern is linear
+# (no nested/ambiguous quantifiers), so hostile file content cannot trigger
+# catastrophic backtracking.
+VERSION_RE = re.compile(r"^\s*project\s*\(", re.MULTILINE)
+VERSION_NUMBER_RE = re.compile(r"VERSION\s+(\d+\.\d+\.\d+)")
+
+
+def contained_path(value, what):
+    """Resolve value and require it to live inside the repository.
+
+    Every path argument crosses a trust boundary (argparse input), and each is
+    used to create, delete or write files. Normalising and then prefix-checking
+    against the repository root guarantees the tool cannot touch anything
+    outside its own checkout, whatever the arguments say.
+    """
+    resolved = os.path.normpath(os.path.abspath(value))
+    if not resolved.startswith(REPO_ROOT + os.sep):
+        raise SystemExit(f"error: {what} must be inside the repository: {value!r}")
+    return resolved
 
 
 def read_project_version():
     """Return the MAJOR.MINOR.PATCH version declared in CMakeLists.txt."""
     cmakelists = os.path.join(REPO_ROOT, "CMakeLists.txt")
     with open(cmakelists, encoding="utf-8") as fh:
-        match = re.search(r"project\s*\([^)]*VERSION\s+(\d+\.\d+\.\d+)", fh.read())
-    if match is None:
-        raise SystemExit("error: could not find the project VERSION in CMakeLists.txt")
-    return match.group(1)
+        text = fh.read()
+    # Find the project() call, then the VERSION number on the rest of that line.
+    project = VERSION_RE.search(text)
+    if project is not None:
+        line_end = text.find("\n", project.end())
+        match = VERSION_NUMBER_RE.search(text[project.end():line_end])
+        if match is not None:
+            return match.group(1)
+    raise SystemExit("error: could not find the project VERSION in CMakeLists.txt")
 
 
 def find_binarycreator(explicit):
-    """Locate binarycreator: --qtifw-bin, then $QTIFW_BIN, then C:/Qt/Tools."""
+    """Locate binarycreator: --qtifw-bin, then $QTIFW_BIN, then C:/Qt/Tools.
+
+    The returned path is fully resolved and guaranteed to be an existing file
+    named exactly binarycreator(.exe) — the only program this tool ever runs —
+    so a path argument cannot redirect execution to an arbitrary command.
+    """
     exe = "binarycreator.exe" if os.name == "nt" else "binarycreator"
     candidates = []
     if explicit:
@@ -58,8 +92,9 @@ def find_binarycreator(explicit):
         sorted(glob.glob(os.path.expanduser(f"~/Qt/Tools/QtInstallerFramework/*/bin/{exe}")),
                reverse=True))
     for candidate in candidates:
-        if os.path.isfile(candidate):
-            return candidate
+        resolved = os.path.realpath(candidate)
+        if os.path.basename(resolved) == exe and os.path.isfile(resolved):
+            return resolved
     raise SystemExit(
         "error: binarycreator not found; pass --qtifw-bin or set QTIFW_BIN to the "
         "QtIFW bin directory")
@@ -94,7 +129,13 @@ def main():
         "--staging-dir", help="staging directory (default: <deploy-dir>/../installer-staging)")
     args = parser.parse_args()
 
-    deploy_dir = os.path.abspath(args.deploy_dir)
+    # Every path argument is confined to the repository before first use.
+    deploy_dir = contained_path(args.deploy_dir, "--deploy-dir")
+    output = contained_path(args.output, "--output")
+    staging = contained_path(
+        args.staging_dir or os.path.join(deploy_dir, os.pardir, "installer-staging"),
+        "--staging-dir")
+
     # The deploy install produces Qt's bin/plugins/translations layout.
     if not os.path.isfile(os.path.join(deploy_dir, "bin", "claude-chats-browser.exe")):
         raise SystemExit(
@@ -103,8 +144,6 @@ def main():
 
     version = read_project_version()
     binarycreator = find_binarycreator(args.qtifw_bin)
-    staging = os.path.abspath(
-        args.staging_dir or os.path.join(deploy_dir, os.pardir, "installer-staging"))
 
     # Stage a fresh QtIFW input tree: config/ + packages/<id>/{meta,data}.
     if os.path.isdir(staging):
@@ -127,7 +166,6 @@ def main():
 
     shutil.copytree(deploy_dir, data_dir)
 
-    output = os.path.abspath(args.output)
     print(f"building installer {output} (version {version}) with {binarycreator}")
     subprocess.run(
         [
