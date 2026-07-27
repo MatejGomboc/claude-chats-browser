@@ -79,9 +79,13 @@ runs:
             if [ -n "${{ inputs.modules }}" ]; then
                 MODULE_ARGS="--modules ${{ inputs.modules }}"
             fi
+            # --base pins the official server: third-party mirrors sometimes lag
+            # behind on fresh Qt releases and fail metadata resolution. The cache
+            # populated from main keeps CI off the network in the common case.
             pipx run --spec aqtinstall aqt install-qt \
                 "${{ steps.params.outputs.host }}" desktop "${{ inputs.version }}" "${{ steps.params.outputs.arch }}" \
                 $MODULE_ARGS \
+                --base https://download.qt.io/ \
                 --outputdir "$HOME/Qt"
 
         - name: Setup environment
