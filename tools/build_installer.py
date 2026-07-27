@@ -17,8 +17,11 @@ Usage (from the repository root, after a Release build + deploy):
 
 The application version is read from CMakeLists.txt (the single source of
 truth, already enforced against release tags by the release workflow).
-binarycreator is located via --qtifw-bin, the QTIFW_BIN environment variable,
-or by scanning C:/Qt/Tools/QtInstallerFramework/*/bin.
+binarycreator is found in the conventional QtIFW install locations —
+C:/Qt/Tools/QtInstallerFramework/*/bin (the official installer's default)
+and ~/Qt/Tools/QtInstallerFramework/*/bin (aqtinstall's install-tool, used
+by the release workflow). Deliberately not configurable: the tool only ever
+executes a binarycreator found at these fixed locations.
 
 All directory and output arguments must resolve to paths inside the
 repository (the working tree this script lives in); the tool refuses
@@ -73,31 +76,26 @@ def read_project_version():
     raise SystemExit("error: could not find the project VERSION in CMakeLists.txt")
 
 
-def find_binarycreator(explicit):
-    """Locate binarycreator: --qtifw-bin, then $QTIFW_BIN, then C:/Qt/Tools.
+def find_binarycreator():
+    """Locate binarycreator in the conventional QtIFW install locations.
 
-    The returned path is fully resolved and guaranteed to be an existing file
-    named exactly binarycreator(.exe) — the only program this tool ever runs —
-    so a path argument cannot redirect execution to an arbitrary command.
+    Deliberately takes no input: the only program this tool ever executes is
+    a binarycreator(.exe) found under C:/Qt/Tools or ~/Qt/Tools, so no
+    argument or environment variable can redirect execution elsewhere.
     """
     exe = "binarycreator.exe" if os.name == "nt" else "binarycreator"
     candidates = []
-    if explicit:
-        candidates.append(os.path.join(explicit, exe))
-    if os.environ.get("QTIFW_BIN"):
-        candidates.append(os.path.join(os.environ["QTIFW_BIN"], exe))
     candidates.extend(
         sorted(glob.glob(f"C:/Qt/Tools/QtInstallerFramework/*/bin/{exe}"), reverse=True))
     candidates.extend(
         sorted(glob.glob(os.path.expanduser(f"~/Qt/Tools/QtInstallerFramework/*/bin/{exe}")),
                reverse=True))
     for candidate in candidates:
-        resolved = os.path.realpath(candidate)
-        if os.path.basename(resolved) == exe and os.path.isfile(resolved):
-            return resolved
+        if os.path.isfile(candidate):
+            return candidate
     raise SystemExit(
-        "error: binarycreator not found; pass --qtifw-bin or set QTIFW_BIN to the "
-        "QtIFW bin directory")
+        "error: binarycreator not found; install the Qt Installer Framework under "
+        "C:/Qt/Tools or ~/Qt/Tools (aqt install-tool <host> desktop tools_ifw)")
 
 
 def substitute(template_path, output_path, version):
@@ -124,7 +122,6 @@ def main():
         help="directory with the windeployqt-deployed application")
     parser.add_argument(
         "--output", required=True, help="path of the installer executable to create")
-    parser.add_argument("--qtifw-bin", help="QtIFW bin directory containing binarycreator")
     parser.add_argument(
         "--staging-dir", help="staging directory (default: <deploy-dir>/../installer-staging)")
     args = parser.parse_args()
@@ -143,7 +140,7 @@ def main():
             "run the deploy install first")
 
     version = read_project_version()
-    binarycreator = find_binarycreator(args.qtifw_bin)
+    binarycreator = find_binarycreator()
 
     # Stage a fresh QtIFW input tree: config/ + packages/<id>/{meta,data}.
     if os.path.isdir(staging):

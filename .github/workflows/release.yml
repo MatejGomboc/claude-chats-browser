@@ -173,15 +173,16 @@ jobs:
                     --base https://download.qt.io/ \
                     --outputdir "$HOME/Qt"
 
+            # build_installer.py finds binarycreator itself in ~/Qt/Tools, where
+            # the aqt install-tool step above put it (deliberately not
+            # configurable - see the script's docstring).
             - name: Build installer (Windows)
               if: runner.os == 'Windows'
               shell: bash
               run: |
-                QTIFW_BIN=$(ls -d "$HOME"/Qt/Tools/QtInstallerFramework/*/bin | head -1)
                 python tools/build_installer.py \
                     --deploy-dir build/${{ matrix.preset }}-deploy \
-                    --output ${{ matrix.artifact }}-setup.exe \
-                    --qtifw-bin "$QTIFW_BIN"
+                    --output ${{ matrix.artifact }}-setup.exe
 
             - name: Upload artifact (Unix)
               if: runner.os != 'Windows'
