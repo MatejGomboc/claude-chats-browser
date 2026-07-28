@@ -72,8 +72,8 @@ it unless Matej says otherwise. Obey `STYLE.md` in all code.
    case-sensitive filesystems. Primary dev machine is Windows; CI should
    eventually build all three.
 
-Feature order (by value): see `README.md` § Planned Features — the canonical
-list. Build them in that order.
+All five originally-planned features are shipped — `README.md` § Features is
+the canonical delivered list. New feature ideas go through issues/discussions.
 
 ## CI/CD Notes
 

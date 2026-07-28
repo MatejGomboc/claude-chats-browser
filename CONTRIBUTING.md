@@ -97,9 +97,10 @@ When submitting:
 #### PR Requirements
 
 - [ ] Code compiles without warnings on all relevant presets
+- [ ] Tests pass (`ctest`) and new behaviour is covered where practical
 - [ ] Code is formatted (`.clang-format`)
 - [ ] British spelling in documentation and comments 🇬🇧
-- [ ] Documentation is updated if needed
+- [ ] Documentation is updated if needed, including a `CHANGELOG.md` entry for user-facing changes
 - [ ] Commit messages follow [conventional commits](#commit-messages)
 - [ ] **No real conversation data, session keys, or secrets anywhere in the PR**
 
@@ -228,7 +229,7 @@ chore: bump Qt to 6.8
 | `CODE_OF_CONDUCT.md` | Contributor Covenant code of conduct |
 | `STYLE.md` | Code style conventions (C++, Qt Designer forms, SQL, Python, YAML, Markdown) |
 | `SECURITY.md` | Privacy model, security policy, and vulnerability reporting |
-| `CHANGELOG.md` | User-facing change history (reserved until first stable release) |
+| `CHANGELOG.md` | User-facing change history (Keep a Changelog format; feeds the release notes) |
 | `.claude/CLAUDE.md` | AI assistant context — export-format findings and project plan |
 
 ### Updating Documentation
@@ -238,7 +239,7 @@ chore: bump Qt to 6.8
 - Update `.claude/CLAUDE.md` when the architecture or plan changes
 - Update `STYLE.md` and bump its `*Last updated:* …` timestamp when changing style conventions
 - Keep examples up to date and working
-- `CHANGELOG.md` is reserved for the first stable release; skip it for pre-release work
+- Add a `CHANGELOG.md` entry for user-facing changes — release notes are extracted from it verbatim
 
 ---
 
