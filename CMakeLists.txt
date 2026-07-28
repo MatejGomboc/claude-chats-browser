@@ -46,6 +46,8 @@ qt_add_executable(claude-chats-browser
     src/stats_collector.hpp
     src/stats_panel.cpp
     src/stats_panel.hpp
+    src/streamed_markdown.cpp
+    src/streamed_markdown.hpp
 )
 
 qt_add_resources(claude-chats-browser "assets"
@@ -192,6 +194,8 @@ qt_add_executable(tst_reader_performance
     src/icon_util.hpp
     src/message_widget.cpp
     src/message_widget.hpp
+    src/streamed_markdown.cpp
+    src/streamed_markdown.hpp
 )
 
 target_include_directories(tst_reader_performance PRIVATE src)
