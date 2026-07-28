@@ -22,8 +22,7 @@ using ChatsBrowser::StatsCollector;
 
 namespace
 {
-    QJsonObject message(const QString& sender, const QString& created_at, const QJsonArray& content = {},
-        const QJsonArray& attachments = {})
+    QJsonObject message(const QString& sender, const QString& created_at, const QJsonArray& content = {}, const QJsonArray& attachments = {})
     {
         QJsonObject m;
         m.insert("sender", sender);

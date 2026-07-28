@@ -96,14 +96,17 @@ namespace ChatsBrowser
         const qreal plot_bottom = height() - PADDING - LABEL_HEIGHT;
         const QFontMetrics metrics(font());
 
-        // Bars: rounded top corners, flat baseline end.
+        // Bars: rounded top corners, flat baseline end. The two subpaths overlap,
+        // so the union needs the winding fill rule — under the default odd-even
+        // rule the overlap would cancel out and punch a hole in the bar.
         for (int i = 0; i < m_bars.size(); ++i) {
             const QRectF rect = barRect(i);
             QPainterPath path;
+            path.setFillRule(Qt::WindingFill);
             path.addRoundedRect(rect, BAR_RADIUS, BAR_RADIUS);
             // Square the bottom corners off so the rounding is on the data end only.
             path.addRect(rect.x(), rect.y() + (rect.height() / 2.0), rect.width(), rect.height() / 2.0);
-            painter.fillPath(path.simplified(), (i == m_hover_index) ? BAR_HOVER_COLOUR : BAR_COLOUR);
+            painter.fillPath(path, (i == m_hover_index) ? BAR_HOVER_COLOUR : BAR_COLOUR);
         }
 
         // Recessive baseline under the bars.

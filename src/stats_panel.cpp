@@ -152,9 +152,7 @@ namespace ChatsBrowser
         // Headline tiles, two rows of four.
         QGridLayout* tiles = new QGridLayout();
         tiles->setSpacing(8);
-        const QString span = (stats.first_message_at.isEmpty())
-            ? QString("—")
-            : QString("%1 → %2").arg(stats.first_message_at.left(10), stats.last_message_at.left(10));
+        const QString span = (stats.first_message_at.isEmpty()) ? QString("—") : QString("%1 → %2").arg(stats.first_message_at.left(10), stats.last_message_at.left(10));
         const QList<QPair<QString, QString>> tile_data = {
             {QString("%1 / %2").arg(number(stats.readable_conversations), number(stats.conversations)), "readable / total conversations"},
             {number(stats.messages), "messages"},
