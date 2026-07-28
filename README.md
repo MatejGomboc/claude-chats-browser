@@ -177,6 +177,23 @@ Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
+## Verifying Downloads
+
+Every release artifact ships with a SHA-256 checksum and a signed
+[build provenance attestation](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations)
+proving it was built by this repository's release workflow from the tagged commit —
+not modified or built elsewhere.
+
+```bash
+# Integrity: compare against SHA256SUMS.txt from the release
+sha256sum --check --ignore-missing SHA256SUMS.txt
+
+# Authenticity: verify the signed provenance (requires the GitHub CLI)
+gh attestation verify claude-chats-browser-windows-x86_64-setup.exe --owner MatejGomboc
+```
+
+---
+
 ## Licence
 
 Copyright (C) 2026 Matej Gomboc <https://github.com/MatejGomboc/claude-chats-browser>.

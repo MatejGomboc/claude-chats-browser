@@ -44,5 +44,9 @@ fast, pleasant, fully searchable offline chat browser.
 
 - Fully offline: nothing ever leaves the machine unless explicitly requested.
   See SECURITY.md for the complete privacy model.
+- Every artifact below carries a SHA-256 checksum (`SHA256SUMS.txt`) and a signed
+  build provenance attestation. Verify authenticity with:
+  `gh attestation verify <file> --owner MatejGomboc`
+  — see README § Verifying Downloads.
 
 [0.1.0]: https://github.com/MatejGomboc/claude-chats-browser/releases/tag/v0.1.0
