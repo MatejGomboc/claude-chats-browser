@@ -69,4 +69,4 @@ When reporting a vulnerability, please include:
 
 ---
 
-*This security policy was last updated on 2026-07-21.*
+*This security policy was last updated on 2026-07-28.*

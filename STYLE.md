@@ -26,9 +26,13 @@ Avoid duplicating information across files. Each piece of information should hav
 
 | Information | Canonical Source |
 |-------------|------------------|
-| Build commands | `README.md` § Building (once the scaffold lands) |
+| Build commands | `README.md` § Building |
+| Test commands | `README.md` § Tests |
 | Toolchain prerequisites | `README.md` § Requirements |
-| Planned features (and build order) | `README.md` § Planned Features |
+| Features | `README.md` § Features |
+| Install artifacts & first-run notes | `README.md` § Installing |
+| Download verification (checksums, provenance) | `README.md` § Verifying Downloads |
+| Getting a claude.ai export | `README.md` § Getting Your Export |
 | Backfill tool usage | `README.md` § Tools |
 | Coding standards & naming | `STYLE.md` (this file) |
 | Commit conventions | `CONTRIBUTING.md` § Commit Messages |
@@ -479,14 +483,16 @@ int x = legacy_function(); // NOLINT(bugprone-unused-return-value)
 
 ### Tests
 
-Unit tests use the Qt Test framework, live in `tests/`, and run via CTest
-(`ctest --test-dir build/<preset>`). Pure logic (e.g. the conversation reply
+Unit tests use the Qt Test framework, live in `tests/`, and run via CTest —
+see `README.md` § Tests for the command. Pure logic (e.g. the conversation reply
 tree) is factored out of the widgets so it can be tested without a GUI.
 
 ### Sanitisers
 
-Planned: CMake sanitiser presets (AddressSanitizer/UndefinedBehaviorSanitizer on Linux).
-This section will be expanded when they land.
+The `linux-clang-asan` preset builds with AddressSanitizer + UndefinedBehaviorSanitizer
+(`cmake --workflow --preset linux-clang-asan` runs configure, build and tests in one go).
+CI runs it on every pull request with `ASAN_OPTIONS=detect_leaks=0` — leak detection is
+off because the un-instrumented Qt stack reports its one-time allocations as leaks.
 
 ---
 
@@ -496,4 +502,4 @@ See `CONTRIBUTING.md` § Commit Messages for conventions and allowed types.
 
 ---
 
-*Last updated: 2026-07-21*
+*Last updated: 2026-07-28*

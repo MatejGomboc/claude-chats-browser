@@ -42,19 +42,35 @@ FTS5 full-text index, then gives you a native desktop UI over it:
 - **Merge-by-UUID imports** — feed it multiple exports over time; it keeps the union, never destroys anything
 - **Honest history** — deleted-chat tombstones are shown greyed-out (date + message count), not hidden
 
-## Status
+## Installing
 
-**Pre-scaffold.** The data layer is fully analysed (export schema, content block types,
-branching, tombstones — see [.claude/CLAUDE.md](.claude/CLAUDE.md)) and the fetch tooling
-works. The application itself is in design; this README describes the agreed plan.
+Grab the latest build for your platform from
+[Releases](https://github.com/MatejGomboc/claude-chats-browser/releases):
 
-## Planned Features
+| Platform | Artifact | First-run note |
+|----------|----------|----------------|
+| Windows | `…-setup.exe` installer (or portable `.zip`) | SmartScreen shows "Windows protected your PC" for unsigned apps — click **More info → Run anyway** |
+| Linux | `.AppImage` | `chmod +x` the file, then run it — no installation needed |
+| macOS | `.dmg` (universal: Intel + Apple Silicon) | Drag to Applications; first launch needs **right-click → Open** (unnotarised app) |
 
-1. **Conversation browser** — sidebar with search-as-you-type (FTS5), date filters, project grouping
-2. **Reader** — markdown rendering, collapsible thinking blocks, tool calls as expandable chips, inline attachments
-3. **Branch navigation** — conversations are trees; edit/retry branches become navigable
-4. **Artifact extraction** — reconstruct artifacts from tool-call history, preview and export to disk
-5. **Stats dashboard** — activity over time, model and tool usage
+All artifacts are checksummed and carry signed build-provenance attestations —
+see [Verifying Downloads](#verifying-downloads).
+
+## Features
+
+- **Conversation browser** — sidebar with search-as-you-type full-text search across
+  every conversation; deleted-conversation tombstones shown greyed-out, not hidden
+- **Reader** — markdown rendering, syntax-highlighted code blocks, collapsible
+  thinking sections, tool calls and results as expandable sections, inline pasted-text
+  attachments, per-message timestamps, copy buttons for messages and code
+- **Find in conversation** — Ctrl+F with match highlighting and previous/next
+  navigation (Ctrl+Shift+F for the across-conversations search)
+- **Branch navigation** — conversations are trees; edited prompts and retried replies
+  become navigable sibling branches
+- **Artifacts** — every artifact reconstructed from its tool-call history, with
+  rendered previews (markdown, HTML, SVG), highlighted source, copy, and export to disk
+- **Statistics** — headline archive numbers, a messages-per-month activity chart,
+  and ranked tool usage
 
 ---
 
@@ -81,7 +97,7 @@ All three are first-class targets, built and tested on every pull request.
 ## Requirements
 
 - **C++20** compiler (MSVC 19.30+, GCC 12+, or Clang 15+)
-- **CMake** 3.24+
+- **CMake** 3.25+ (the presets file requires it)
 - **Ninja** build system
 - **Qt 6.5+** (Widgets and Sql modules)
 - **Python** 3.10+ (for `tools/` scripts only)
@@ -163,7 +179,7 @@ is never stored.
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor guidelines |
 | [STYLE.md](STYLE.md) | Code style conventions (C++, SQL, Python) |
 | [SECURITY.md](SECURITY.md) | Privacy model, security policy, vulnerability reporting |
-| [CHANGELOG.md](CHANGELOG.md) | Change history (reserved until first stable release) |
+| [CHANGELOG.md](CHANGELOG.md) | Change history (Keep a Changelog format; feeds the release notes) |
 | [.claude/CLAUDE.md](.claude/CLAUDE.md) | Export-format findings and project plan |
 
 ---
@@ -174,6 +190,23 @@ Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 - Follow the style guide in [STYLE.md](STYLE.md)
 - Security issues: see [SECURITY.md](SECURITY.md)
+
+---
+
+## Verifying Downloads
+
+Every release artifact ships with a SHA-256 checksum and a signed
+[build provenance attestation](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations)
+proving it was built by this repository's release workflow from the tagged commit —
+not modified or built elsewhere.
+
+```bash
+# Integrity: compare against SHA256SUMS.txt from the release
+sha256sum --check --ignore-missing SHA256SUMS.txt
+
+# Authenticity: verify the signed provenance (requires the GitHub CLI)
+gh attestation verify claude-chats-browser-windows-x86_64-setup.exe --owner MatejGomboc
+```
 
 ---
 

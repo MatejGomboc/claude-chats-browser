@@ -528,8 +528,11 @@ namespace ChatsBrowser
     {
         QMessageBox::about(this, "About Claude Chats Browser",
             QString("<b>Claude Chats Browser</b> %1<br><br>"
-                    "Browse, search and read claude.ai data exports offline.<br>"
-                    "Qt %2 · GPL v3")
+                    "Browse, search and read claude.ai data exports offline.<br><br>"
+                    "<a href=\"https://github.com/MatejGomboc/claude-chats-browser\">"
+                    "github.com/MatejGomboc/claude-chats-browser</a><br><br>"
+                    "Copyright © 2026 Matej Gomboc<br>"
+                    "GNU General Public License v3.0 · Qt %2")
                 .arg(QApplication::applicationVersion(), QT_VERSION_STR));
     }
 }
