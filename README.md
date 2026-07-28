@@ -72,11 +72,11 @@ canonical source.
 
 | Platform | Status |
 |----------|--------|
-| Windows  | Planned (primary development platform) |
-| Linux    | Planned |
-| macOS    | Planned |
+| Windows  | Supported — CI-built and tested; installer + zip (primary development platform) |
+| Linux    | Supported — CI-built and tested; AppImage |
+| macOS    | Supported — CI-built and tested; universal (Intel + Apple Silicon) DMG |
 
-All three are first-class targets.
+All three are first-class targets, built and tested on every pull request.
 
 ## Requirements
 

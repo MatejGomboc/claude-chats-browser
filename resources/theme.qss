@@ -367,6 +367,56 @@ QPlainTextEdit#artifactSource {
     border-radius: 4px;
 }
 
+/* Statistics window */
+
+#statsPanel {
+    background-color: #1E1E1E;
+}
+
+#statsBusy {
+    color: #858585;
+    font-style: italic;
+}
+
+#statTile {
+    background-color: #252526;
+    border: 1px solid #2D2D2D;
+    border-radius: 4px;
+}
+
+#statValue {
+    color: #FFFFFF;
+    font-size: 14pt;
+    font-weight: bold;
+}
+
+#statCaption {
+    color: #858585;
+    font-size: 8pt;
+}
+
+#statsHeader {
+    color: #BBBBBB;
+    font-size: 8pt;
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding-top: 6px;
+}
+
+#statsTable {
+    background-color: #252526;
+    border: 1px solid #2D2D2D;
+    border-radius: 4px;
+    gridline-color: #2D2D2D;
+}
+
+#statsTable QHeaderView::section {
+    background-color: #2D2D2D;
+    color: #BBBBBB;
+    border: none;
+    padding: 4px 8px;
+}
+
 QPlainTextEdit#codeBlock {
     background-color: #1A1A1A;
     color: #D4D4D4;
