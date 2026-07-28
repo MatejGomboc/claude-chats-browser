@@ -131,11 +131,13 @@ module.exports = async ({ github, context, core }) => {
                 prefix = `${parts[0]}-${parts[1]}-${parts[2]}`;
             } else if (cache.key.startsWith("codeql-")) {
                 // GitHub's CodeQL default setup writes one cache per analysed
-                // commit, keyed "…-{language}-{codeql version}-{commit}". Left
-                // ungrouped they are all "newest in their own group" and pile up
-                // forever. Strip the trailing version+commit so only the newest
-                // per database/language survives.
-                prefix = cache.key.replace(/-[^-]+-[^-]+$/, "");
+                // commit, keyed
+                // "…-{language}-{codeql version}-{40-hex commit}-{run id}-{attempt}".
+                // Left ungrouped they are all "newest in their own group" and
+                // pile up forever. Strip everything from the version onward so
+                // only the newest per database/language survives — across
+                // CodeQL version bumps too.
+                prefix = cache.key.replace(/-[0-9][0-9.]*-[0-9a-f]{40}-.*$/, "");
             } else {
                 // Unknown cache type, use full key as prefix (won't group)
                 prefix = cache.key;
