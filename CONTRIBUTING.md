@@ -129,8 +129,8 @@ cd claude-chats-browser
 
 Then build as described in `README.md` § Building (the canonical source for build commands).
 
-To try the app you need a claude.ai data export (claude.ai → Settings → Privacy → Export data).
-Extract it into `data/` (gitignored).
+To try the app you need a claude.ai data export — see `README.md` § Getting Your Export
+(the canonical steps). Extract it into `data/` (gitignored).
 
 ---
 
