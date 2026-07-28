@@ -16,6 +16,7 @@
 #include "code_highlighter.hpp"
 #include "collapsible_section.hpp"
 #include "icon_util.hpp"
+#include "streamed_markdown.hpp"
 #include <QClipboard>
 #include <QColor>
 #include <QDateTime>
@@ -397,17 +398,46 @@ namespace ChatsBrowser
     {
         CollapsibleSection* section = new CollapsibleSection(title, false, this);
 
-        // The body label (and the body text itself, e.g. pretty-printed tool JSON) is
+        // The body widget (and the body text itself, e.g. pretty-printed tool JSON) is
         // only built when the user first expands the section — building thousands of
         // them eagerly is what froze the UI on large conversations.
+        //
+        // Monospace bodies (tool JSON, attachments) go into a QPlainTextEdit exactly
+        // like code blocks: its plain-text layout handles huge documents instantly,
+        // and with wrapping off the height is just the line count — expanding a
+        // megabyte tool result used to hang for seconds in QLabel's layout engine.
+        // Thinking keeps full markdown rendering, but streams in paragraph chunks
+        // through the event loop (the reader's own chunked-render trick), so a long
+        // block never freezes the UI while it lays out.
         section->setContentFactory([body_provider = std::move(body_provider), monospace](QWidget* parent) -> QWidget* {
-            QLabel* body_label = new QLabel(parent);
-            body_label->setObjectName(monospace ? "toolBody" : "thinkingBody");
-            body_label->setTextFormat(monospace ? Qt::PlainText : Qt::MarkdownText);
-            body_label->setText(body_provider());
-            body_label->setWordWrap(true);
-            body_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
-            return body_label;
+            const QString body = body_provider();
+            if (monospace) {
+                QPlainTextEdit* editor = new QPlainTextEdit(parent);
+                editor->setObjectName("toolBody");
+                editor->setReadOnly(true);
+                editor->setFrameShape(QFrame::NoFrame);
+                editor->setLineWrapMode(QPlainTextEdit::NoWrap);
+                editor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+                editor->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+                editor->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+                editor->document()->setDocumentMargin(8);
+
+                QFont mono("Cascadia Code");
+                mono.setStyleHint(QFont::Monospace);
+                mono.setPointSize(9);
+                editor->setFont(mono);
+
+                editor->setPlainText(body);
+
+                const QFontMetrics metrics(mono);
+                const int line_count = qMax(1, editor->document()->blockCount());
+                editor->setFixedHeight((line_count * metrics.lineSpacing()) + (2 * 8) + 14);
+                return editor;
+            }
+
+            StreamedMarkdown* streamed = new StreamedMarkdown(body, parent);
+            streamed->setObjectName("thinkingBody");
+            return streamed;
         });
 
         layout->addWidget(section);

@@ -455,7 +455,11 @@ QToolButton#branchNav:disabled {
     color: #A89355;
     background-color: #232323;
     border-left: 2px solid #A89355;
-    padding: 6px 10px;
+}
+
+#thinkingBodyText {
+    color: #A89355;
+    background: transparent;
 }
 
 #toolBody {
@@ -510,48 +514,40 @@ QProgressBar#renderProgress::chunk {
     border-radius: 3px;
 }
 
-/* Overlay scrollbars: translucent, revealed on hover */
+/* Scrollbars: always visible — grey track, near-black handle */
 
 QScrollBar:vertical {
-    background: transparent;
-    width: 14px;
+    background-color: #3C3C3C;
+    width: 12px;
     margin: 0;
 }
 
 QScrollBar::handle:vertical {
-    background: transparent;
+    background-color: #141414;
     min-height: 30px;
-    border-radius: 3px;
+    border-radius: 4px;
     margin: 2px;
 }
 
-QScrollBar:vertical:hover::handle:vertical {
-    background: rgba(121, 121, 121, 0.7);
-}
-
 QScrollBar::handle:vertical:hover {
-    background: rgba(160, 160, 160, 0.9);
+    background-color: #000000;
 }
 
 QScrollBar:horizontal {
-    background: transparent;
-    height: 14px;
+    background-color: #3C3C3C;
+    height: 12px;
     margin: 0;
 }
 
 QScrollBar::handle:horizontal {
-    background: transparent;
+    background-color: #141414;
     min-width: 30px;
-    border-radius: 3px;
+    border-radius: 4px;
     margin: 2px;
 }
 
-QScrollBar:horizontal:hover::handle:horizontal {
-    background: rgba(121, 121, 121, 0.7);
-}
-
 QScrollBar::handle:horizontal:hover {
-    background: rgba(160, 160, 160, 0.9);
+    background-color: #000000;
 }
 
 QScrollBar::add-line, QScrollBar::sub-line {
