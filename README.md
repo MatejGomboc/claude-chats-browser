@@ -71,6 +71,8 @@ see [Verifying Downloads](#verifying-downloads).
   rendered previews (markdown, HTML, SVG), highlighted source, copy, and export to disk
 - **Statistics** — headline archive numbers, a messages-per-month activity chart,
   and ranked tool usage
+- **Export** — save any conversation as shareable Markdown (exactly the branch
+  path you are reading) or as lossless, re-importable JSON
 
 ---
 

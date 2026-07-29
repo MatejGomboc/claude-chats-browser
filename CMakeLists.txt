@@ -22,6 +22,8 @@ qt_add_executable(claude-chats-browser
     src/code_highlighter.hpp
     src/collapsible_section.cpp
     src/collapsible_section.hpp
+    src/conversation_exporter.cpp
+    src/conversation_exporter.hpp
     src/conversation_list_model.cpp
     src/conversation_list_model.hpp
     src/conversation_reader.cpp
@@ -179,6 +181,29 @@ target_link_libraries(tst_stats_collector
 
 add_test(NAME stats_collector COMMAND tst_stats_collector)
 
+# Exporting a conversation must produce faithful markdown and a re-importable envelope.
+qt_add_executable(tst_conversation_exporter
+    tests/tst_conversation_exporter.cpp
+    src/conversation_exporter.cpp
+    src/conversation_exporter.hpp
+)
+
+target_include_directories(tst_conversation_exporter PRIVATE src)
+
+if(MSVC)
+    target_compile_options(tst_conversation_exporter PRIVATE /W4 /WX)
+else()
+    target_compile_options(tst_conversation_exporter PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
+
+target_link_libraries(tst_conversation_exporter
+    PRIVATE
+        Qt6::Core
+        Qt6::Test
+)
+
+add_test(NAME conversation_exporter COMMAND tst_conversation_exporter)
+
 # GUI test: opening a large conversation must stream in without freezing the UI.
 qt_add_executable(tst_reader_performance
     tests/tst_reader_performance.cpp
@@ -257,6 +282,9 @@ set_tests_properties(artifact_reconstructor PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")
 
 set_tests_properties(stats_collector PROPERTIES
+    ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")
+
+set_tests_properties(conversation_exporter PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>")
 
 # Runs on the real platform (the offscreen QPA ships no fonts, which makes text layout

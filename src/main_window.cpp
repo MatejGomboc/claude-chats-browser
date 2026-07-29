@@ -16,6 +16,7 @@
 #include "ui_main_window.h"
 #include "artifacts_panel.hpp"
 #include "conversation_list_model.hpp"
+#include "conversation_exporter.hpp"
 #include "conversation_reader.hpp"
 #include "database.hpp"
 #include "find_bar.hpp"
@@ -27,6 +28,8 @@
 #include <QFileDialog>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QJsonDocument>
+#include <QSaveFile>
 #include <QItemSelectionModel>
 #include <QKeySequence>
 #include <QLabel>
@@ -249,6 +252,20 @@ namespace ChatsBrowser
         m_import_action = file_menu->addAction("&Import claude.ai export…");
         m_import_action->setShortcut(QKeySequence("Ctrl+I"));
         connect(m_import_action, &QAction::triggered, this, &MainWindow::onImportActionTriggered);
+
+        file_menu->addSeparator();
+        m_export_markdown_action = file_menu->addAction("&Export Conversation as Markdown…");
+        m_export_markdown_action->setShortcut(QKeySequence("Ctrl+E"));
+        m_export_markdown_action->setEnabled(false);
+        connect(m_export_markdown_action, &QAction::triggered, this, [this]() {
+            exportCurrentConversation(true);
+        });
+        m_export_json_action = file_menu->addAction("Export Conversation as &JSON…");
+        m_export_json_action->setEnabled(false);
+        connect(m_export_json_action, &QAction::triggered, this, [this]() {
+            exportCurrentConversation(false);
+        });
+
         file_menu->addSeparator();
         QAction* quit_action = file_menu->addAction("&Quit");
         quit_action->setShortcut(QKeySequence::Quit);
@@ -420,6 +437,8 @@ namespace ChatsBrowser
             updateBreadcrumb(QString());
             updateConversationStatus(QString());
             updateArtifactsButton(QString());
+            m_export_markdown_action->setEnabled(false);
+            m_export_json_action->setEnabled(false);
             return;
         }
         QString uuid = m_tabs->tabData(index).toString();
@@ -427,6 +446,67 @@ namespace ChatsBrowser
         updateBreadcrumb(uuid);
         updateConversationStatus(uuid);
         updateArtifactsButton(uuid);
+        m_export_markdown_action->setEnabled(true);
+        m_export_json_action->setEnabled(true);
+    }
+
+    void MainWindow::exportCurrentConversation(bool as_markdown)
+    {
+        const QString uuid = m_reader->conversationUuid();
+        if (uuid.isEmpty()) {
+            return;
+        }
+
+        ConversationInfo info;
+        info.uuid = uuid;
+        QSqlQuery query(QSqlDatabase::database("main"));
+        query.prepare("SELECT name, summary, created_at, updated_at FROM conversations WHERE uuid = ?");
+        query.addBindValue(uuid);
+        if (query.exec() && query.next()) {
+            info.name = query.value(0).toString();
+            info.summary = query.value(1).toString();
+            info.created_at = query.value(2).toString();
+            info.updated_at = query.value(3).toString();
+        }
+
+        QByteArray payload;
+        QString filter;
+        QString suggested = ConversationExporter::suggestedBaseName(info);
+        if (as_markdown) {
+            // Markdown exports what is on screen: the currently selected branch path.
+            payload = ConversationExporter::toMarkdown(info, m_reader->currentPathMessages()).toUtf8();
+            filter = "Markdown (*.md)";
+            suggested += ".md";
+        } else {
+            // JSON is lossless: every message of every branch, original export JSON.
+            QList<QJsonObject> all_messages;
+            QSqlQuery messages(QSqlDatabase::database("main"));
+            messages.prepare("SELECT raw_json FROM messages WHERE conversation_uuid = ? ORDER BY created_at, rowid");
+            messages.addBindValue(uuid);
+            if (messages.exec()) {
+                while (messages.next()) {
+                    const QJsonDocument document = QJsonDocument::fromJson(messages.value(0).toString().toUtf8());
+                    if (document.isObject()) {
+                        all_messages.append(document.object());
+                    }
+                }
+            }
+            payload = QJsonDocument(ConversationExporter::toExportJson(info, all_messages)).toJson(QJsonDocument::Indented);
+            filter = "JSON (*.json)";
+            suggested += ".json";
+        }
+
+        const QString path = QFileDialog::getSaveFileName(this, "Export conversation", suggested, filter);
+        if (path.isEmpty()) {
+            return;
+        }
+
+        QSaveFile file(path);
+        if (file.open(QIODevice::WriteOnly) && (file.write(payload) == payload.size()) && file.commit()) {
+            statusBar()->showMessage(QString("Exported to %1").arg(path), STATUS_MESSAGE_TIMEOUT_MS);
+        } else {
+            QMessageBox::warning(this, "Export failed", QString("Could not write %1").arg(path));
+        }
     }
 
     void MainWindow::updateArtifactsButton(const QString& uuid)
