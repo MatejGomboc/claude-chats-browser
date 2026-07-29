@@ -4,11 +4,12 @@ Qt 6 / C++ desktop app for browsing, searching and reading claude.ai
 data-export dumps offline. The raw export is a single huge JSON file that is
 unusable for humans; this app turns it into a fast, pleasant chat browser.
 
-**Status: usable.** Import (SQLite + FTS5), searchable sidebar, tabbed tree-aware
+**Status: released.** Import (SQLite + FTS5), searchable sidebar, tabbed tree-aware
 reader (branches, markdown, syntax-highlighted code, thinking/tool sections,
 attachments, timestamps, copy buttons), in-conversation find (Ctrl+F), artifact
-reconstruction + viewer, and cross-platform CI. The plan below is agreed — follow
-it unless Matej says otherwise. Obey `STYLE.md` in all code.
+reconstruction + viewer, statistics window, conversation export (Markdown/JSON),
+and cross-platform CI with signed, attested releases. The plan below is agreed —
+follow it unless Matej says otherwise. Obey `STYLE.md` in all code.
 
 ## Off limits
 
