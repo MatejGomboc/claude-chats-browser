@@ -39,6 +39,9 @@ namespace ChatsBrowser
             const QDateTime moment = QDateTime::fromString(iso_timestamp, Qt::ISODateWithMs);
             return moment.isValid() ? moment.toLocalTime().toString("yyyy-MM-dd HH:mm") : QString();
         }
+
+        //! Longest URL kept in a tool trace line before it is elided.
+        constexpr qsizetype MAX_TRACE_URL_CHARS = 120;
     }
 
     QString ConversationExporter::visibleText(const QJsonObject& message)
@@ -68,6 +71,26 @@ namespace ChatsBrowser
         return text;
     }
 
+    QString ConversationExporter::toolTrace(const QJsonObject& tool_use_block)
+    {
+        const QString name = tool_use_block.value("name").toString();
+
+        // The tool's input is deliberately not exported: it is unbounded, often the
+        // most private part of a message, and belongs in the JSON export instead. A
+        // URL is the exception — it is the whole sourcing value of a fetch, and it
+        // is already a public address.
+        QString url = tool_use_block.value("input").toObject().value("url").toString().simplified();
+        if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+            url.clear();
+        }
+        if (url.size() > MAX_TRACE_URL_CHARS) {
+            url = url.left(MAX_TRACE_URL_CHARS) + "…";
+        }
+
+        const QString label = name.isEmpty() ? QString("(unnamed)") : name;
+        return url.isEmpty() ? QString("> 🔧 Tool: %1\n").arg(label) : QString("> 🔧 Tool: %1 — %2\n").arg(label, url);
+    }
+
     QString ConversationExporter::toMarkdown(const ConversationInfo& info, const QList<QJsonObject>& path_messages)
     {
         QString out;
@@ -79,7 +102,8 @@ namespace ChatsBrowser
                    .arg(created.isEmpty() ? QString("unknown date") : created, updated.isEmpty() ? QString("unknown date") : updated);
 
         for (const QJsonObject& message : path_messages) {
-            const QString text = visibleText(message);
+            const QJsonArray content_blocks = message.value("content").toArray();
+
             QStringList attachment_names;
             for (const QJsonValue& value : message.value("attachments").toArray()) {
                 const QString name = value.toObject().value("file_name").toString();
@@ -87,8 +111,19 @@ namespace ChatsBrowser
                     attachment_names.append(name);
                 }
             }
-            if (text.trimmed().isEmpty() && attachment_names.isEmpty()) {
-                continue; // tool/thinking-only message: nothing shareable
+
+            // A message is worth exporting if it carries prose, an attachment, or a
+            // tool call — the last of these so the reader can see that an answer was
+            // looked up rather than known.
+            bool has_tool_call = false;
+            for (const QJsonValue& block_value : content_blocks) {
+                if (block_value.toObject().value("type").toString() == "tool_use") {
+                    has_tool_call = true;
+                    break;
+                }
+            }
+            if (visibleText(message).trimmed().isEmpty() && attachment_names.isEmpty() && (!has_tool_call)) {
+                continue; // thinking only: nothing shareable
             }
 
             out += "\n---\n\n";
@@ -102,9 +137,33 @@ namespace ChatsBrowser
                 out += "\n";
             }
 
-            if (!text.trimmed().isEmpty()) {
-                out += text.trimmed();
-                out += "\n";
+            // Blocks in their original order, so a tool call appears where it happened
+            // rather than being hoisted away from the prose it produced.
+            if (content_blocks.isEmpty()) {
+                const QString legacy = message.value("text").toString().trimmed();
+                if (!legacy.isEmpty()) {
+                    out += legacy;
+                    out += "\n";
+                }
+                continue;
+            }
+
+            for (const QJsonValue& block_value : content_blocks) {
+                const QJsonObject block = block_value.toObject();
+                const QString type = block.value("type").toString();
+
+                if (type == "text") {
+                    const QString block_text = block.value("text").toString().trimmed();
+                    if (!block_text.isEmpty()) {
+                        out += block_text;
+                        out += "\n\n";
+                    }
+                } else if (type == "tool_use") {
+                    out += toolTrace(block);
+                    out += "\n";
+                }
+                // thinking and tool_result carry no shareable prose: the first is
+                // private reasoning, the second is raw payload (see the JSON export).
             }
         }
 

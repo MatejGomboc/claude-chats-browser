@@ -67,21 +67,71 @@ private slots:
         QVERIFY(md.contains("```cpp\nint x = 1;\n```"));
     }
 
-    //! Tool-only messages are skipped; attachments are noted by name.
-    void markdownSkipsToolOnlyAndNotesAttachments()
+    //! Attachments are noted by name; thinking-only messages are skipped entirely.
+    void markdownNotesAttachmentsAndSkipsThinkingOnly()
+    {
+        QJsonObject thinking_only;
+        thinking_only.insert("sender", "assistant");
+        thinking_only.insert("created_at", "2026-01-01T10:00:00.000000Z");
+        thinking_only.insert("content", QJsonArray{QJsonObject{{"type", "thinking"}, {"thinking", "private reasoning"}}});
+
+        QJsonObject with_attachment = textMessage("human", "see attached");
+        with_attachment.insert("attachments", QJsonArray{QJsonObject{{"file_name", "notes.txt"}}});
+
+        const QString md = ConversationExporter::toMarkdown(info(), {thinking_only, with_attachment});
+        QVERIFY(!md.contains("private reasoning"));
+        QVERIFY(md.contains("📎 Attachment: notes.txt"));
+        QVERIFY(md.contains("see attached"));
+    }
+
+    //! Tool calls leave a one-line trace, in place, without their input.
+    void markdownTracesToolCalls()
+    {
+        QJsonObject message;
+        message.insert("sender", "assistant");
+        message.insert("created_at", "2026-01-01T10:00:00.000000Z");
+        message.insert("content",
+            QJsonArray{
+                QJsonObject{{"type", "text"}, {"text", "Let me look."}},
+                QJsonObject{{"type", "tool_use"}, {"name", "web_fetch"}, {"input", QJsonObject{{"url", "https://example.com/page"}}}},
+                QJsonObject{{"type", "tool_use"}, {"name", "conversation_search"}, {"input", QJsonObject{{"query", "a private query"}}}},
+                QJsonObject{{"type", "tool_result"}, {"content", "an enormous payload"}},
+                QJsonObject{{"type", "text"}, {"text", "Found it."}},
+            });
+
+        const QString md = ConversationExporter::toMarkdown(info(), {message});
+
+        QVERIFY(md.contains("🔧 Tool: web_fetch — https://example.com/page"));
+        QVERIFY(md.contains("🔧 Tool: conversation_search"));
+        // Inputs other than the URL, and tool results, never reach the file.
+        QVERIFY(!md.contains("a private query"));
+        QVERIFY(!md.contains("an enormous payload"));
+        // Order is preserved: prose, traces, then the prose that followed them.
+        QVERIFY(md.indexOf("Let me look.") < md.indexOf("web_fetch"));
+        QVERIFY(md.indexOf("conversation_search") < md.indexOf("Found it."));
+    }
+
+    //! A message that is nothing but a tool call still shows its trace.
+    void markdownKeepsToolOnlyMessages()
     {
         QJsonObject tool_only;
         tool_only.insert("sender", "assistant");
         tool_only.insert("created_at", "2026-01-01T10:00:00.000000Z");
         tool_only.insert("content", QJsonArray{QJsonObject{{"type", "tool_use"}, {"name", "artifacts"}}});
 
-        QJsonObject with_attachment = textMessage("human", "see attached");
-        with_attachment.insert("attachments", QJsonArray{QJsonObject{{"file_name", "notes.txt"}}});
+        const QString md = ConversationExporter::toMarkdown(info(), {tool_only});
+        QVERIFY(md.contains("## Claude"));
+        QVERIFY(md.contains("🔧 Tool: artifacts"));
+    }
 
-        const QString md = ConversationExporter::toMarkdown(info(), {tool_only, with_attachment});
-        QVERIFY(!md.contains("artifacts"));
-        QVERIFY(md.contains("📎 Attachment: notes.txt"));
-        QVERIFY(md.contains("see attached"));
+    //! A non-HTTP or unnamed tool degrades gracefully rather than leaking input.
+    void toolTraceHandlesOddBlocks()
+    {
+        const QJsonObject file_url{{"type", "tool_use"}, {"name", "reader"}, {"input", QJsonObject{{"url", "file:///c:/secrets.txt"}}}};
+        QCOMPARE(ConversationExporter::toolTrace(file_url), QString("> 🔧 Tool: reader\n"));
+
+        const QJsonObject unnamed{{"type", "tool_use"}};
+        QCOMPARE(ConversationExporter::toolTrace(unnamed), QString("> 🔧 Tool: (unnamed)\n"));
     }
 
     //! Legacy messages with only the top-level text field still export.

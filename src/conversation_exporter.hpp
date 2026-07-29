@@ -33,9 +33,12 @@ namespace ChatsBrowser
         Turns one conversation into a shareable file.
 
         Two formats with different promises:
-        - Markdown: the *displayed* branch path, prose and code only — sender and
-          timestamp headers, fenced code preserved, attachments noted by name,
-          thinking and tool traffic omitted. Made for sharing and reading.
+        - Markdown: the *displayed* branch path, made for sharing and reading —
+          sender and timestamp headers, fenced code preserved, attachments noted
+          by name, and a one-line trace per tool call so an answer that was looked
+          up does not read as one that was simply known. Thinking, tool inputs and
+          tool results are omitted: the first is private reasoning, the others are
+          unbounded payloads (the JSON export keeps them).
         - JSON: lossless — every message of every branch as its original export
           object, in a conversation envelope matching the claude.ai export shape,
           so the file can be re-imported by this app.
@@ -55,5 +58,9 @@ namespace ChatsBrowser
 
         //! The message's visible prose: its text blocks joined (legacy text fallback).
         [[nodiscard]] static QString visibleText(const QJsonObject& message);
+
+        //! One markdown line naming a tool call (and its URL, when it has one).
+        //! Never includes the tool's input beyond that URL.
+        [[nodiscard]] static QString toolTrace(const QJsonObject& tool_use_block);
     };
 }
