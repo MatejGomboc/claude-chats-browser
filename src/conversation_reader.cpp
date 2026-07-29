@@ -248,6 +248,23 @@ namespace ChatsBrowser
         showPlaceholder("Select a conversation to read it here.");
     }
 
+    QString ConversationReader::conversationUuid() const
+    {
+        return m_conversation_uuid;
+    }
+
+    QList<QJsonObject> ConversationReader::currentPathMessages() const
+    {
+        QList<QJsonObject> messages;
+        for (const PathNode& node : m_tree.currentPath()) {
+            const QJsonDocument document = QJsonDocument::fromJson(m_raw_messages.value(node.uuid));
+            if (document.isObject()) {
+                messages.append(document.object());
+            }
+        }
+        return messages;
+    }
+
     int ConversationReader::findText(const QString& term)
     {
         // Drop the previous run's highlights before recomputing.

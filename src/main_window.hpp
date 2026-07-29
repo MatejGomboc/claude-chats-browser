@@ -85,6 +85,10 @@ namespace ChatsBrowser
         //! Opens the artifacts window for the current conversation.
         void openArtifactsPanel();
 
+        //! Exports the current conversation to a file the user picks.
+        //! Markdown exports the displayed branch path; JSON exports everything.
+        void exportCurrentConversation(bool as_markdown);
+
         //! Refreshes the breadcrumb bar for the given conversation (empty clears it).
         void updateBreadcrumb(const QString& uuid);
 
@@ -118,6 +122,8 @@ namespace ChatsBrowser
         QTimer* m_search_timer{nullptr}; //!< Debounce timer for the search box.
         QTimer* m_search_busy_timer{nullptr}; //!< Delays the search busy indicator so quick searches do not flicker.
         QAction* m_import_action{nullptr}; //!< File menu import action; disabled while importing.
+        QAction* m_export_markdown_action{nullptr}; //!< Export current conversation (markdown); needs an open tab.
+        QAction* m_export_json_action{nullptr}; //!< Export current conversation (JSON); needs an open tab.
         QThread m_import_thread; //!< Worker thread owning the ImportWorker.
     };
 }

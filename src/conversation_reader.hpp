@@ -67,6 +67,13 @@ namespace ChatsBrowser
         //! Clears any active find: removes highlights and forgets the matches.
         void clearFind();
 
+        //! The UUID of the conversation being shown (empty when none).
+        [[nodiscard]] QString conversationUuid() const;
+
+        //! The currently displayed branch path as parsed message objects, in order.
+        //! What the user sees is what this returns — branch selection included.
+        [[nodiscard]] QList<QJsonObject> currentPathMessages() const;
+
     signals:
         //! Progress of a chunked render (emitted only for conversations that need chunking).
         void renderProgressChanged(int done_messages, int total_messages);
