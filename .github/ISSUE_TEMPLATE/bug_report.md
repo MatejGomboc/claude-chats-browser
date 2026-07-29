@@ -43,7 +43,7 @@ Paste any error messages here (remember to redact conversation content and keys!
 ## Environment
 
 - **OS:** [e.g., Windows 11, macOS 14.2, Ubuntu 24.04]
-- **claude-chats-browser version:** [e.g., 0.1.0]
+- **claude-chats-browser version:** [e.g., 0.2.0]
 - **Qt version:** [e.g., 6.8.1]
 - **Compiler and CMake preset:** [if built from source, e.g., MSVC 19.40, windows-msvc]
 - **Export details:** [rough size / date of export, if relevant — never the content]

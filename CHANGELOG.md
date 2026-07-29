@@ -5,14 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-07-29
 
 ### Added
 
-- **Export conversation** (File menu): save the current conversation as shareable
-  Markdown — the displayed branch path with prose, code and attachment names
-  (Ctrl+E) — or as lossless JSON carrying every branch and the original message
-  objects, re-importable by the app.
+- **Export conversation** (File menu), in two formats with different promises:
+    - **Markdown** (Ctrl+E) — the branch path you are reading, made for sharing:
+      sender and timestamp headers, fenced code preserved verbatim, attachments
+      noted by name, and a one-line trace per tool call (`🔧 Tool: name — url`)
+      so an answer that was looked up does not read as one that was simply
+      known. Thinking, tool inputs and tool results stay out; an http(s) URL is
+      the only part of a tool call that is exported.
+    - **JSON** — lossless: every message of every branch as its original export
+      object, in a conversation envelope matching the claude.ai export shape, so
+      the file can be re-imported by this app.
 
 ## [0.1.0] - 2026-07-28
 
@@ -58,5 +64,5 @@ fast, pleasant, fully searchable offline chat browser.
   `gh attestation verify <file> --owner MatejGomboc`
   — see README § Verifying Downloads.
 
-[unreleased]: https://github.com/MatejGomboc/claude-chats-browser/compare/v0.1.0...HEAD
+[0.2.0]: https://github.com/MatejGomboc/claude-chats-browser/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/MatejGomboc/claude-chats-browser/releases/tag/v0.1.0
